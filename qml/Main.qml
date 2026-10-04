@@ -12,14 +12,16 @@ ApplicationWindow {
     color: Theme.background
     font.family: Theme.fontFamily
     property bool detailsOpen: false
+    property bool captionEditOpen: false
     property string sourceTab: "Film"
-    readonly property bool overlayActive: detailsOpen || preview.opened
+    readonly property bool overlayActive: detailsOpen || preview.opened || captionEditOpen
     property var previousFocus: null
     onActiveFocusItemChanged: { if (!overlayActive && activeFocusItem && activeFocusItem.activeFocusOnTab && activeFocusItem.enabled) previousFocus = activeFocusItem; }
     onOverlayActiveChanged: {
         if (!overlayActive) Qt.callLater(function() { if (previousFocus && previousFocus.enabled) previousFocus.forceActiveFocus(); });
     }
-    onDetailsOpenChanged: { if (detailsOpen) details.focusFirst(); else if (preview.opened) preview.focusFirst(); }
+    onDetailsOpenChanged: { if (detailsOpen) details.focusFirst(); else if (captionEditOpen) captionEditor.focusFirst(); else if (preview.opened) preview.focusFirst(); }
+    onCaptionEditOpenChanged: { if (captionEditOpen) captionEditor.focusFirst(); }
     header: Rectangle {
         height: 76; color: Theme.sidebar
         RowLayout {
@@ -32,6 +34,7 @@ ApplicationWindow {
             Item { Layout.fillWidth: true }
             TaskSpinner { running: backend.busy; Layout.preferredWidth: 24; Layout.preferredHeight: 24 }
             UpdateNotice { Layout.preferredWidth: updates.installing ? 300 : 44; visible: updates.available || updates.installing }
+            PrimaryButton { objectName: "editCaptionsButton"; text: "Edytuj napisy"; visible: !updates.installing; enabled: backend.transcriptReady && !backend.busy; onClicked: window.captionEditOpen = true }
             PrimaryButton { text: "Otwórz projekt"; visible: !updates.installing; enabled: !backend.busy; onClicked: backend.openProject() }
             PrimaryButton { text: "Zapisz projekt"; visible: !updates.installing; enabled: !!backend.videoPath && !backend.busy; onClicked: { window.contentItem.forceActiveFocus(); backend.saveProject(); } }
         }
@@ -103,13 +106,14 @@ ApplicationWindow {
         }
         SettingsPreview { Layout.preferredWidth: 248; Layout.fillHeight: true; Layout.topMargin: 24; Layout.bottomMargin: 24; Layout.rightMargin: 24 }
     }
-    DropArea { anchors.fill: parent; z: -1; enabled: !backend.busy && !updates.installing; onDropped: event => { if (event.hasUrls) { backend.dropFiles(event.urls); event.acceptProposedAction(); } } }
-    Rectangle { anchors.fill: parent; z: 10; color: "#66000000"; opacity: window.detailsOpen || preview.opened ? 1 : 0; visible: opacity > 0; Behavior on opacity { NumberAnimation { duration: Theme.fast } } MouseArea { anchors.fill: parent; onClicked: { window.detailsOpen = false; preview.opened = false; backend.closePreview(); } } }
+    DropArea { anchors.fill: parent; z: -1; enabled: !backend.busy && !updates.installing && !window.overlayActive; onDropped: event => { if (event.hasUrls) { backend.dropFiles(event.urls); event.acceptProposedAction(); } } }
+    Rectangle { anchors.fill: parent; z: 10; color: "#66000000"; opacity: window.overlayActive ? 1 : 0; visible: opacity > 0; Behavior on opacity { NumberAnimation { duration: Theme.fast } } MouseArea { anchors.fill: parent; onClicked: { if (window.detailsOpen) window.detailsOpen = false; else if (window.captionEditOpen) window.captionEditOpen = false; else { preview.opened = false; backend.closePreview(); } } } }
     VideoPreview { id: preview; enabled: opened && !window.detailsOpen }
+    CaptionEditor { id: captionEditor; opened: window.captionEditOpen; enabled: opened && !window.detailsOpen; onCloseRequested: window.captionEditOpen = false }
     DetailsPanel { id: details; opened: window.detailsOpen; onCloseRequested: window.detailsOpen = false }
     Connections { target: backend; function onErrorOccurred(text) { window.detailsOpen = true } }
     Shortcut { sequence: "Ctrl+O"; enabled: !backend.busy && !updates.installing && !window.overlayActive; onActivated: backend.openProject() }
     Shortcut { sequence: "Ctrl+S"; enabled: !backend.busy && !updates.installing && !!backend.videoPath && !window.overlayActive; onActivated: { window.contentItem.forceActiveFocus(); backend.saveProject(); } }
-    Shortcut { sequence: "Escape"; onActivated: { if (window.detailsOpen || preview.opened) { window.detailsOpen = false; preview.opened = false; backend.closePreview(); } else if (backend.busy) backend.cancelTask(); } }
+    Shortcut { sequence: "Escape"; onActivated: { if (window.detailsOpen) window.detailsOpen = false; else if (window.captionEditOpen) window.captionEditOpen = false; else if (preview.opened) { preview.opened = false; backend.closePreview(); } else if (backend.busy) backend.cancelTask(); } }
     onClosing: function(close) { close.accepted = backend.requestClose() }
 }

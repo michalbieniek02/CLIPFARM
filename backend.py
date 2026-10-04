@@ -15,6 +15,8 @@ from PySide6.QtWidgets import QFileDialog
 
 from engine import Cancelled, Pipeline, ROOT, minute_clips, subtitle_text, validate_clips, validate_options
 from captions import FONT_SIZE
+from font_catalog import FONT_NAMES, resolve_font
+from video_layout import SETTING_RANGES, number, frame_layout
 from framing import FRAMING_LABELS, FRAMING_HELP
 from transcripts import existing_transcript, read_transcript, remember_transcript, validate_segments
 from ui_media import thumbnail
@@ -126,6 +128,9 @@ class Backend(QObject):
         self._settings = {'minimum': '20', 'maximum': '30', 'format': 'Pionowy 9:16',
             'framing': 'Cały obraz · czarne pasy', 'burn': True, 'mode': 'AI klipy',
             'light_color': False, 'speed_up': False, 'mirror': False,
+            'caption_font': 'Anton', 'caption_size': float(FONT_SIZE),
+            'caption_custom': False, 'caption_x': .5, 'caption_y': .84375,
+            'fit_zoom': 1.0, 'fit_x': .5, 'fit_y': .5,
             'brief': 'Mocny początek, ciekawa myśl lub zabawny moment. Pełna puenta i naturalne zakończenie.',
             'whisper': 'Zrównoważona'}
         self._animations = self.system_animations()
@@ -174,13 +179,29 @@ class Backend(QObject):
     framingHelp = Property(str, lambda self: FRAMING_HELP.get(FRAMING_LABELS.get(self._settings['framing']), '') if self._settings['format'] == 'Pionowy 9:16' else 'Zachowamy oryginalne proporcje całego filmu.', notify=settingsChanged)
     downloadProviders = Property('QStringList', lambda self: list(PROVIDERS), constant=True)
     downloadQualities = Property('QStringList', lambda self: list(QUALITIES), constant=True)
-    captionSize = Property(int, lambda self: FONT_SIZE, constant=True)
+    captionSize = Property(float, lambda self: self._settings['caption_size'], notify=settingsChanged)
+    captionFont = Property(str, lambda self: self._settings['caption_font'], notify=settingsChanged)
+    fontChoices = Property('QStringList', lambda self: list(FONT_NAMES), constant=True)
+    captionRows = Property('QVariantList', lambda self: [
+        {'start': row['start'], 'end': row['end'], 'text': row['text']} for row in self.segments], notify=stateChanged)
+    previewLayout = Property('QVariantMap', lambda self: frame_layout(
+        1672, 941, self._settings['format'] == 'Pionowy 9:16', self._settings['framing'] == 'Cały obraz · czarne pasy',
+        self._settings['fit_zoom'], self._settings['fit_x'], self._settings['fit_y'],
+        (self._settings['caption_x'], self._settings['caption_y']) if self._settings['caption_custom'] else None,
+        self._settings['burn']), notify=settingsChanged)
 
     @Slot(str, 'QVariant')
     def setSetting(self, name, value):
         if self.busy or name not in self._settings:
             return
-        if isinstance(self._settings[name], bool):
+        if name in SETTING_RANGES:
+            try:
+                value = number(value, *SETTING_RANGES[name])
+            except (TypeError, ValueError):
+                return
+        elif name == 'caption_font':
+            value = resolve_font(value)
+        elif isinstance(self._settings[name], bool):
             value = bool(value)
         elif not isinstance(value, str):
             value = str(value)
@@ -188,6 +209,44 @@ class Backend(QObject):
             return
         self._settings = {**self._settings, name: value}
         self.settingsChanged.emit()
+
+    @Slot(int, str, result=bool)
+    def editCaption(self, index, text):
+        if self.busy or not 0 <= index < len(self.segments):
+            return False
+        text = text.strip()
+        if not text or len(text) > 4000:
+            self.reportError('Napis nie może być pusty ani dłuższy niż 4000 znaków.')
+            return False
+        rows = copy.deepcopy(self.segments)
+        row, tokens = rows[index], text.split()
+        if text == row['text']:
+            return True
+        old_words = row.get('words', [])
+        adjusted = len(old_words) != len(tokens)
+        if not adjusted:
+            row['words'] = [{**word, 'text': token} for word, token in zip(old_words, tokens)]
+        else:
+            left = old_words[0]['start'] if old_words else row['start']
+            right = old_words[-1]['end'] if old_words else row['end']
+            total, cursor, words = sum(len(token) for token in tokens), left, []
+            for position, token in enumerate(tokens):
+                finish = right if position == len(tokens) - 1 else cursor + (right - left) * len(token) / total
+                words.append({'start': cursor, 'end': min(right, finish), 'text': token})
+                cursor = finish
+            row['words'] = words
+        row['text'] = text
+        try:
+            if self.source and self.work:
+                remember_transcript(self.source, self.work, rows)
+        except OSError as exc:
+            self.reportError(str(exc))
+            return False
+        self.segments = rows
+        self.closePreview()
+        self._status = 'Napis zapisany.' + (' Po dodaniu lub usunięciu słów sprawdź synchronizację w podglądzie.' if adjusted else '')
+        self.stateChanged.emit()
+        return True
 
     @Slot(str)
     def reportError(self, text):
@@ -509,7 +568,10 @@ class Backend(QObject):
         def operation(p):
             files = p.export(source, clips, rows, folder, vertical=s['format'] == 'Pionowy 9:16', burn=s['burn'],
                              framing=FRAMING_LABELS[s['framing']], timing_work=work,
-                             light_color=s['light_color'], speed_up=s['speed_up'], mirror=s['mirror'])
+                             light_color=s['light_color'], speed_up=s['speed_up'], mirror=s['mirror'],
+                             caption_font=s['caption_font'], caption_size=s['caption_size'],
+                             caption_position=(s['caption_x'], s['caption_y']) if s['caption_custom'] else None,
+                             fit_zoom=s['fit_zoom'], fit_focus=(s['fit_x'], s['fit_y']))
             return files, p.caption_segments
         def complete(result):
             files, self.segments = result
@@ -600,8 +662,14 @@ class Backend(QObject):
             clips = validate_clips(data['clips'], metadata['duration'], 1, metadata['duration'], strict=True)
             views = self.clip_rows(clips, source, work)
             for key, value in data.get('settings', {}).items():
-                if key in defaults and isinstance(value, type(defaults[key])):
+                if key in SETTING_RANGES:
+                    try:
+                        defaults[key] = number(value, *SETTING_RANGES[key])
+                    except (TypeError, ValueError):
+                        pass
+                elif key in defaults and isinstance(value, type(defaults[key])):
                     defaults[key] = value
+            defaults['caption_font'] = resolve_font(defaults['caption_font'])
             if defaults['format'] not in ('Pionowy 9:16', 'Oryginalny'):
                 defaults['format'] = 'Pionowy 9:16'
             if defaults['framing'] not in FRAMING_LABELS:

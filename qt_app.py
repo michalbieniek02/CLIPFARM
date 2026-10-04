@@ -11,6 +11,7 @@ from PySide6.QtWidgets import QApplication
 
 from backend import Backend
 from app_updates import Updates
+from font_catalog import FONT_NAMES, font_path
 
 ROOT = Path(__file__).resolve().parent
 
@@ -21,8 +22,11 @@ def create_application(check_updates=True):
     app.setApplicationName('CLIPFARM')
     app.setOrganizationName('CLIPFARM')
     app.setWindowIcon(QIcon(str(ROOT / 'assets/clipfarm.ico')))
-    families = QFontDatabase.families()
-    app.setFont(QFont('Inter' if 'Inter' in families else 'Segoe UI', 10))
+    if not hasattr(app, '_clipfarm_ui_font'):
+        app._clipfarm_ui_font = 'Inter' if 'Inter' in QFontDatabase.families() else 'Segoe UI'
+    app.setFont(QFont(app._clipfarm_ui_font, 10))
+    for family in FONT_NAMES:
+        QFontDatabase.addApplicationFont(str(font_path(family)))
     backend = Backend()
     updates = Updates(ROOT, backend, auto_check=check_updates)
     backend.updates = updates

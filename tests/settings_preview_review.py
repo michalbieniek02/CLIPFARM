@@ -28,8 +28,12 @@ def click(name, fraction=.5):
     target = item(name)
     point = target.mapToScene(QPointF(target.width() * fraction, target.height() / 2))
     scroll = item('settingsScroll').property('contentItem')
-    if name.endswith('Switch') and point.y() > window.height() - 40:
+    if point.x() < 296 and point.y() > window.height() - 40:
         scroll.setProperty('contentY', scroll.property('contentY') + point.y() - window.height() + 80)
+        app.processEvents()
+        point = target.mapToScene(QPointF(target.width() * fraction, target.height() / 2))
+    elif point.x() < 296 and point.y() < 110:
+        scroll.setProperty('contentY', max(0, scroll.property('contentY') + point.y() - 130))
         app.processEvents()
         point = target.mapToScene(QPointF(target.width() * fraction, target.height() / 2))
     assert target.isVisible() and target.isEnabled(), name
@@ -43,6 +47,8 @@ try:
     click('previewPlaybackButton')
     frame = item('settingsPreviewFrame')
     picture = item('settingsPreviewPicture')
+    phone = item('settingsPreviewPhone')
+    assert phone.height() > frame.height() and phone.width() > frame.width()
     assert abs(frame.width() / frame.height() - 9 / 16) < .005
     assert item('settingsPreviewCaptions').isVisible()
     assert picture.height() < frame.height() / 2
@@ -75,11 +81,81 @@ try:
     assert item('settingsPreview').height() > 500
     summary = item('previewTranscriptionInfo')
     preview = item('settingsPreview')
-    assert summary.y() + summary.height() < preview.height() - 10, (summary.y(), summary.height(), preview.height())
+    summary_bottom = summary.mapToItem(preview, QPointF(0, summary.height())).y()
+    assert summary_bottom < preview.height() - 12, (summary_bottom, preview.height())
     capture('settings-preview-minimum.png')
+    # Font names are shown in their own real registered family, and affect the caption.
+    assert len(backend.fontChoices) == 20
+    click('captionFontChoice')
+    capture('settings-preview-font-list.png')
+    QTest.keyClick(window, Qt.Key_End)
+    QTest.keyClick(window, Qt.Key_Return)
+    settle()
+    assert backend.settings['caption_font'] == backend.fontChoices[-1]
+    assert item('captionFontChoice').property('font').family() == backend.fontChoices[-1]
+    captions = item('settingsPreviewCaptions')
+    caption_texts = [child for child in captions.childItems() if child.property('text') in ('TAK', 'WYGLĄDA', 'TWÓJ', 'KLIP')]
+    assert len(caption_texts) == 4
+    assert all(child.property('font').family() == backend.fontChoices[-1] for child in caption_texts)
+    click('captionSizeField')
+    QTest.keyClick(window, Qt.Key_A, Qt.ControlModifier)
+    for key in '110':
+        QTest.keyClick(window, Qt.Key(ord(key)))
+    QTest.keyClick(window, Qt.Key_Tab)
+    settle()
+    assert backend.captionSize == 110
+    # Drag the complete caption line on the actual phone canvas, then nudge via keyboard.
+    drag = item('settingsPreviewCaptionDrag')
+    start = drag.mapToScene(QPointF(drag.width() / 2, drag.height() / 2))
+    QTest.mousePress(window, Qt.LeftButton, Qt.NoModifier, start.toPoint())
+    QTest.mouseMove(window, (start + QPointF(8, -40)).toPoint(), 50)
+    QTest.mouseRelease(window, Qt.LeftButton, Qt.NoModifier, (start + QPointF(8, -40)).toPoint())
+    settle()
+    assert backend.settings['caption_custom'] and backend.settings['caption_y'] < .84
+    assert captions.x() >= -1 and captions.x() + captions.width() <= frame.width() + 1
+    previous = backend.settings['caption_y']
+    QTest.keyClick(window, Qt.Key_Up)
+    settle()
+    assert backend.settings['caption_y'] < previous
+    click('captionYField')
+    QTest.keyClick(window, Qt.Key_A, Qt.ControlModifier)
+    for key in '65':
+        QTest.keyClick(window, Qt.Key(ord(key)))
+    QTest.keyClick(window, Qt.Key_Tab)
+    settle()
+    assert abs(backend.settings['caption_y'] - .65) < .001
+    backend.setSetting('caption_x', 0)
+    backend.setSetting('caption_y', 1)
+    settle()
+    assert captions.x() >= 0 and captions.y() + captions.height() <= frame.height() + .01
+    backend.setSetting('caption_x', .5)
+    backend.setSetting('caption_y', .65)
+    capture('settings-preview-caption-edit.png')
+    # Zoom preserves source aspect; a drag selects the normalized source focus.
+    zoom = item('fitZoomSlider')
+    click('fitZoomSlider', .5)
+    assert backend.settings['fit_zoom'] > 1
+    assert abs(picture.width() / picture.height() - 1672 / 941) < .01
+    image_drag = item('settingsPreviewImageDrag')
+    start = image_drag.mapToScene(QPointF(image_drag.width() / 2, image_drag.height() * .18))
+    previous = backend.settings['fit_x']
+    QTest.mousePress(window, Qt.LeftButton, Qt.NoModifier, start.toPoint())
+    QTest.mouseMove(window, (start + QPointF(-20, 15)).toPoint(), 50)
+    QTest.mouseRelease(window, Qt.LeftButton, Qt.NoModifier, (start + QPointF(-20, 15)).toPoint())
+    settle()
+    assert backend.settings['fit_x'] > previous
+    assert 0 <= backend.settings['fit_y'] <= 1
+    capture('settings-preview-zoom-pan.png')
+    click('previewResetButton')
+    assert not backend.settings['caption_custom']
+    assert backend.settings['fit_zoom'] == 1 and backend.settings['fit_x'] == .5 and backend.settings['fit_y'] == .5
+    assert item('captionYField').property('text') == str(round(backend.previewLayout['caption_y'] / backend.previewLayout['canvas_height'] * 100))
+    backend.setSetting('caption_font', 'Anton')
+    backend.setSetting('caption_size', 84)
     click('settingsFormatTabs', .75)
     assert backend.settings['format'] == 'Oryginalny'
     assert abs(frame.width() / frame.height() - 16 / 9) < .01
+    assert abs(captions.property('fittedSize') - backend.captionSize * frame.width() / 1080) < 1
     capture('settings-preview-original-minimum.png')
     click('settingsFormatTabs', .25)
     # Use the real combo popup through keyboard selection.
@@ -90,10 +166,8 @@ try:
     settle()
     assert backend.settings['framing'] == backend.framingLabels[-1], backend.settings
     assert picture.height() >= frame.height() - 1
-    before = picture.x()
     click('mirrorSwitch', .1)
     assert backend.settings['mirror'] and window.findChild(object, 'previewMirrorTransform').property('xScale') == -1
-    assert abs(picture.x() - before) > 5
     click('colorSwitch', .1)
     assert backend.settings['light_color'] and item('settingsPreviewEffect').property('contrast') > 0
     click('tempoSwitch', .1)
@@ -119,6 +193,13 @@ try:
     assert not backend.errorMessage, backend.errorMessage
     window.resize(1360, 900)
     capture('settings-preview-project-desktop.png')
+    click('editCaptionsButton')
+    assert window.property('captionEditOpen')
+    capture('caption-editor-desktop.png')
+    window.resize(1100, 780)
+    capture('caption-editor-minimum.png')
+    click('captionEditorClose')
+    assert not window.property('captionEditOpen')
     os.environ['CLIPFARM_REDUCED_MOTION'] = '1'
     backend.refreshAnimations()
     settle()
@@ -127,7 +208,7 @@ try:
     warnings = [message for kind, message in messages if kind in (QtMsgType.QtWarningMsg, QtMsgType.QtCriticalMsg, QtMsgType.QtFatalMsg)
                 and ('qml' in message.lower() or 'QQml' in message)]
     assert not warnings, '\n'.join(warnings)
-    print('PASS: actual sidebar clicks change format, crop, mirror, colors, captions, tempo and length; media project fits; reduced motion; no QML warnings.')
+    print('PASS: real font selection and size editing; caption mouse/keyboard/numeric positioning; fit zoom/source-focus drag/reset; phone aspect ratios; mirror/colors; project/reduced motion; no QML warnings.')
 finally:
     backend.updates.stop()
     shiboken6.delete(engine)

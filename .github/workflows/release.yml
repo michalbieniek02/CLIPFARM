@@ -40,7 +40,7 @@ jobs:
       - name: Check downloader, updates and native UI
         shell: pwsh
         run: |
-          $clipfarmChecks = @('tests/kick_api_review.py', 'tests/download_progress_review.py', 'tests/vod_review.py', 'tests/download_parallel_review.py', 'tests/update_review.py', 'tests/update_restart_review.py', 'tests/ci_smoke.py')
+          $clipfarmChecks = @('tests/kick_api_review.py', 'tests/download_progress_review.py', 'tests/vod_review.py', 'tests/download_parallel_review.py', 'tests/font_catalog_review.py', 'tests/face_smoothing_review.py', 'tests/layout_caption_review.py', 'tests/caption_editor_review.py', 'tests/update_review.py', 'tests/update_restart_review.py', 'tests/ci_smoke.py')
           foreach ($clipfarmCheck in $clipfarmChecks) {
             python $clipfarmCheck
             if ($LASTEXITCODE -ne 0) { throw "Check failed: $clipfarmCheck" }

@@ -2,6 +2,7 @@
 from pathlib import Path
 import re
 from PIL import ImageFont
+from font_catalog import font_path, resolve_font
 
 FONT_DIR = Path(__file__).resolve().parent / 'assets' / 'fonts'
 FONT_SIZE = 84  # 20% larger than the previous 70px default at 1080px width.
@@ -87,7 +88,9 @@ def placement(width, height, vertical, fitted):
     return 1080, 1920, 1620, None
 
 
-def ass_text(cues, width, height, y):
+def ass_text(cues, width, height, y, x=None, font='Anton', font_size=FONT_SIZE):
+    font = resolve_font(font)
+    font_size = min(160, max(24, float(font_size)))
     def stamp(seconds):
         total = round(seconds * 100)
         return f'{total // 360000}:{total // 6000 % 60:02}:{total // 100 % 60:02}.{total % 100:02}'
@@ -100,7 +103,7 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Short,Anton,{FONT_SIZE},&H00FFFFFF,&H00FFFFFF,&H00000000,&H80000000,0,0,0,0,100,100,0,0,1,3,1,5,40,40,40,1
+Style: Short,{font},{font_size:g},&H00FFFFFF,&H00FFFFFF,&H00000000,&H80000000,0,0,0,0,100,100,0,0,1,3,1,5,40,40,40,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -110,10 +113,13 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         def safe(text):
             return text.upper().replace('\\', '').replace('{', '(').replace('}', ')')
         text = safe(cue['text'])
-        size = max(12, round(width * FONT_SIZE / 1080))
-        while size > 12 and ImageFont.truetype(str(FONT_DIR / 'Anton-Regular.ttf'), size).getlength(text) > width * .84:
+        size = max(12, round(width * font_size / 1080))
+        while size > 12 and ImageFont.truetype(str(font_path(font)), size).getlength(text) > width * .84:
             size -= 1
-        tag = f'{{\\an5\\pos({width / 2:.0f},{y:.0f})\\fs{size}}}'
+        measured = ImageFont.truetype(str(font_path(font)), size).getlength(text)
+        centre_x = width / 2 if x is None else max(measured / 2 + 8, min(width - measured / 2 - 8, x))
+        centre_y = max(size * .8, min(height - size * .8, y))
+        tag = f'{{\\an5\\pos({centre_x:.0f},{centre_y:.0f})\\fs{size}}}'
         words = cue.get('words')
         if not words:
             lines.append(f"Dialogue: 0,{stamp(cue['start'])},{stamp(cue['end'])},Short,,0,0,0,,{tag}{text}")

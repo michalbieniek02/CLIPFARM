@@ -1,0 +1,228 @@
+{
+  "repository": "https://github.com/google/fonts",
+  "commit": "9710da1eacb3be272583c3224dcb70f9da6eadbb",
+  "retrieved": "2026-10-04",
+  "note": "20 caption font choices; not an asserted popularity ranking. Fixed TrueType faces, unmodified upstream binaries: static Google Fonts repository files where available, static Bold TTFs served by the official fonts.googleapis.com/fonts.gstatic.com service for variable-only repository families. All licenses come from the pinned official Google Fonts repository; Anton was already bundled.",
+  "fonts": [
+    {
+      "family": "Anton",
+      "file": "assets/fonts/Anton-Regular.ttf",
+      "source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/anton/Anton-Regular.ttf",
+      "license": "assets/fonts/OFL-Anton.txt",
+      "license_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/anton/OFL.txt",
+      "metadata_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/anton/METADATA.pb",
+      "sha256": "a4ba3a92350ebb031da0cb47630ac49eb265082ca1bc0450442f4a83ab947cab",
+      "bytes": 170812
+    },
+    {
+      "family": "Bebas Neue",
+      "file": "assets/fonts/BebasNeue-Regular.ttf",
+      "source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/bebasneue/BebasNeue-Regular.ttf",
+      "license": "assets/fonts/bebasneue/OFL.txt",
+      "license_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/bebasneue/OFL.txt",
+      "metadata_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/bebasneue/METADATA.pb",
+      "sha256": "08e4623805102d819f58601e46e345648846075e363b2ceb23313c2d1c83ec73",
+      "bytes": 61400
+    },
+    {
+      "family": "Montserrat",
+      "file": "assets/fonts/Montserrat-Bold.ttf",
+      "source": "https://fonts.gstatic.com/s/montserrat/v31/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCuM70w-.ttf",
+      "license": "assets/fonts/montserrat/OFL.txt",
+      "license_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/montserrat/OFL.txt",
+      "metadata_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/montserrat/METADATA.pb",
+      "sha256": "247f052d2f5b84a5bbe7831c3b08a71ca391ff54f1dfb9be88a3d3da569e3a38",
+      "bytes": 181028,
+      "css_source": "https://fonts.googleapis.com/css2?family=Montserrat:wght@700",
+      "repository_original": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/montserrat/Montserrat%5Bwght%5D.ttf"
+    },
+    {
+      "family": "Poppins",
+      "file": "assets/fonts/Poppins-Bold.ttf",
+      "source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/poppins/Poppins-Bold.ttf",
+      "license": "assets/fonts/poppins/OFL.txt",
+      "license_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/poppins/OFL.txt",
+      "metadata_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/poppins/METADATA.pb",
+      "sha256": "983676516167748b74de6f4771fb384c664fd913acb8b471122ecacf5da5ea6c",
+      "bytes": 155996
+    },
+    {
+      "family": "Inter",
+      "file": "assets/fonts/Inter-Bold.ttf",
+      "source": "https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYMZg.ttf",
+      "license": "assets/fonts/inter/OFL.txt",
+      "license_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/inter/OFL.txt",
+      "metadata_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/inter/METADATA.pb",
+      "sha256": "b37284b5701b6b168dfc770aa1a4ac492106422fd3ba76bc7641e37434e8019c",
+      "bytes": 326468,
+      "css_source": "https://fonts.googleapis.com/css2?family=Inter:wght@700",
+      "repository_original": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/inter/Inter%5Bopsz%2Cwght%5D.ttf"
+    },
+    {
+      "family": "Roboto",
+      "file": "assets/fonts/Roboto-Bold.ttf",
+      "source": "https://fonts.gstatic.com/s/roboto/v51/KFOMCnqEu92Fr1ME7kSn66aGLdTylUAMQXC89YmC2DPNWuYjammT.ttf",
+      "license": "assets/fonts/roboto/OFL.txt",
+      "license_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/roboto/OFL.txt",
+      "metadata_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/roboto/METADATA.pb",
+      "sha256": "35757eaa996b3359022f47f164a67ee9eac04971af24c5b8fbd4b89e844ff190",
+      "bytes": 124292,
+      "css_source": "https://fonts.googleapis.com/css2?family=Roboto:wght@700",
+      "repository_original": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/roboto/Roboto%5Bwdth%2Cwght%5D.ttf"
+    },
+    {
+      "family": "Oswald",
+      "file": "assets/fonts/Oswald-Bold.ttf",
+      "source": "https://fonts.gstatic.com/s/oswald/v57/TK3_WkUHHAIjg75cFRf3bXL8LICs1xZogUE.ttf",
+      "license": "assets/fonts/oswald/OFL.txt",
+      "license_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/oswald/OFL.txt",
+      "metadata_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/oswald/METADATA.pb",
+      "sha256": "a6ee8b91ec269a6f48631ba4ba1a3ab7e5039e5482dda8dc9672ee4620d7bd68",
+      "bytes": 86416,
+      "css_source": "https://fonts.googleapis.com/css2?family=Oswald:wght@700",
+      "repository_original": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/oswald/Oswald%5Bwght%5D.ttf"
+    },
+    {
+      "family": "Open Sans",
+      "file": "assets/fonts/OpenSans-Bold.ttf",
+      "source": "https://fonts.gstatic.com/s/opensans/v44/memSYaGs126MiZpBA-UvWbX2vVnXBbObj2OVZyOOSr4dVJWUgsg-1y4n.ttf",
+      "license": "assets/fonts/opensans/OFL.txt",
+      "license_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/opensans/OFL.txt",
+      "metadata_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/opensans/METADATA.pb",
+      "sha256": "75367e6da7d914eaed87883ba51b2a2b5816b5cdbb39f96ec5c81a5b032bfd5a",
+      "bytes": 122132,
+      "css_source": "https://fonts.googleapis.com/css2?family=Open%20Sans:wght@700",
+      "repository_original": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/opensans/OpenSans%5Bwdth%2Cwght%5D.ttf"
+    },
+    {
+      "family": "Lato",
+      "file": "assets/fonts/Lato-Bold.ttf",
+      "source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/lato/Lato-Bold.ttf",
+      "license": "assets/fonts/lato/OFL.txt",
+      "license_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/lato/OFL.txt",
+      "metadata_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/lato/METADATA.pb",
+      "sha256": "8a0aace75d33794eece4b28187bfc1df0bbd2888b5d8a56e01788c8d65d16be1",
+      "bytes": 656544
+    },
+    {
+      "family": "Nunito",
+      "file": "assets/fonts/Nunito-Bold.ttf",
+      "source": "https://fonts.gstatic.com/s/nunito/v32/XRXI3I6Li01BKofiOc5wtlZ2di8HDFwmRTM.ttf",
+      "license": "assets/fonts/nunito/OFL.txt",
+      "license_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/nunito/OFL.txt",
+      "metadata_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/nunito/METADATA.pb",
+      "sha256": "1a025dfce6e6e03bbe31ba82277ec5ed96df8b8dd58b3df6267269490b90b1dc",
+      "bytes": 125464,
+      "css_source": "https://fonts.googleapis.com/css2?family=Nunito:wght@700",
+      "repository_original": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/nunito/Nunito%5Bwght%5D.ttf"
+    },
+    {
+      "family": "Rubik",
+      "file": "assets/fonts/Rubik-Bold.ttf",
+      "source": "https://fonts.gstatic.com/s/rubik/v31/iJWZBXyIfDnIV5PNhY1KTN7Z-Yh-4I-1UA.ttf",
+      "license": "assets/fonts/rubik/OFL.txt",
+      "license_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/rubik/OFL.txt",
+      "metadata_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/rubik/METADATA.pb",
+      "sha256": "2d6393d64232ea3e0eeff79165d80df61c0859213abdd638b0ec1e81d21098dc",
+      "bytes": 175628,
+      "css_source": "https://fonts.googleapis.com/css2?family=Rubik:wght@700",
+      "repository_original": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/rubik/Rubik%5Bwght%5D.ttf"
+    },
+    {
+      "family": "Barlow Condensed",
+      "file": "assets/fonts/BarlowCondensed-Bold.ttf",
+      "source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/barlowcondensed/BarlowCondensed-Bold.ttf",
+      "license": "assets/fonts/barlowcondensed/OFL.txt",
+      "license_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/barlowcondensed/OFL.txt",
+      "metadata_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/barlowcondensed/METADATA.pb",
+      "sha256": "e476562ec9c1e16cf16475895b511f08c804f438cc9a9f80a44ea50a0eeb5b65",
+      "bytes": 109912
+    },
+    {
+      "family": "Archivo Black",
+      "file": "assets/fonts/ArchivoBlack-Regular.ttf",
+      "source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/archivoblack/ArchivoBlack-Regular.ttf",
+      "license": "assets/fonts/archivoblack/OFL.txt",
+      "license_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/archivoblack/OFL.txt",
+      "metadata_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/archivoblack/METADATA.pb",
+      "sha256": "dd9a89a019b4849f66ab75455fe7bdf931311042cbb0f0f97acc061539703180",
+      "bytes": 90988
+    },
+    {
+      "family": "DM Sans",
+      "file": "assets/fonts/DMSans-Bold.ttf",
+      "source": "https://fonts.gstatic.com/s/dmsans/v17/rP2tp2ywxg089UriI5-g4vlH9VoD8CmcqZG40F9JadbnoEwARZthTg.ttf",
+      "license": "assets/fonts/dmsans/OFL.txt",
+      "license_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/dmsans/OFL.txt",
+      "metadata_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/dmsans/METADATA.pb",
+      "sha256": "2a8e7f713ee79fbccdef3cef5c787aff47580299f7da60144961e7db2ec08211",
+      "bytes": 48200,
+      "css_source": "https://fonts.googleapis.com/css2?family=DM%20Sans:wght@700",
+      "repository_original": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/dmsans/DMSans%5Bopsz%2Cwght%5D.ttf"
+    },
+    {
+      "family": "Fjalla One",
+      "file": "assets/fonts/FjallaOne-Regular.ttf",
+      "source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/fjallaone/FjallaOne-Regular.ttf",
+      "license": "assets/fonts/fjallaone/OFL.txt",
+      "license_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/fjallaone/OFL.txt",
+      "metadata_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/fjallaone/METADATA.pb",
+      "sha256": "ce3b299625abe3c76f8acd235b57b3e07ac6ee2d550e106a4b4e4d60095ae2ba",
+      "bytes": 209052
+    },
+    {
+      "family": "Raleway",
+      "file": "assets/fonts/Raleway-Bold.ttf",
+      "source": "https://fonts.gstatic.com/s/raleway/v37/1Ptxg8zYS_SKggPN4iEgvnHyvveLxVs9pYCP.ttf",
+      "license": "assets/fonts/raleway/OFL.txt",
+      "license_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/raleway/OFL.txt",
+      "metadata_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/raleway/METADATA.pb",
+      "sha256": "6cd34aa42be80b5ae85cc8c816f241d46a6d77a3a3277a6a20962b134b567cea",
+      "bytes": 138748,
+      "css_source": "https://fonts.googleapis.com/css2?family=Raleway:wght@700",
+      "repository_original": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/raleway/Raleway%5Bwght%5D.ttf"
+    },
+    {
+      "family": "Quicksand",
+      "file": "assets/fonts/Quicksand-Bold.ttf",
+      "source": "https://fonts.gstatic.com/s/quicksand/v37/6xK-dSZaM9iE8KbpRA_LJ3z8mH9BOJvgkBgv18E.ttf",
+      "license": "assets/fonts/quicksand/OFL.txt",
+      "license_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/quicksand/OFL.txt",
+      "metadata_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/quicksand/METADATA.pb",
+      "sha256": "8fb2148170b16156ad78d9d787a5d98a2c00752f91fc0fe88c9367c0809ecba3",
+      "bytes": 72916,
+      "css_source": "https://fonts.googleapis.com/css2?family=Quicksand:wght@700",
+      "repository_original": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/quicksand/Quicksand%5Bwght%5D.ttf"
+    },
+    {
+      "family": "Lobster",
+      "file": "assets/fonts/Lobster-Regular.ttf",
+      "source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/lobster/Lobster-Regular.ttf",
+      "license": "assets/fonts/lobster/OFL.txt",
+      "license_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/lobster/OFL.txt",
+      "metadata_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/lobster/METADATA.pb",
+      "sha256": "d6568e697fd50cedc0be04d8aae4127fe95add607e7bff954ca88604be80c205",
+      "bytes": 406076
+    },
+    {
+      "family": "Pacifico",
+      "file": "assets/fonts/Pacifico-Regular.ttf",
+      "source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/pacifico/Pacifico-Regular.ttf",
+      "license": "assets/fonts/pacifico/OFL.txt",
+      "license_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/pacifico/OFL.txt",
+      "metadata_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/pacifico/METADATA.pb",
+      "sha256": "5b6c0d5334a7bf77dea52b975c5a0c408878c0f7115ed5b6fb151f634b7bf701",
+      "bytes": 329380
+    },
+    {
+      "family": "Bungee",
+      "file": "assets/fonts/Bungee-Regular.ttf",
+      "source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/bungee/Bungee-Regular.ttf",
+      "license": "assets/fonts/bungee/OFL.txt",
+      "license_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/bungee/OFL.txt",
+      "metadata_source": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/bungee/METADATA.pb",
+      "sha256": "c4f5361ce120af3e6b9156d0bf379fa19cda2ea0cd18ac01fd99596c6bf66e3f",
+      "bytes": 118996
+    }
+  ]
+}

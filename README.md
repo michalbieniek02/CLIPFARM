@@ -98,7 +98,8 @@ Obok trybu AI dostępny jest tryb „Film · minuty”. Dzieli cały materiał n
 60-sekundowe części (ostatnia może być krótsza), bez wybierania momentów przez model.
 Przed napisami można włączyć dodatki eksportu: lekki kolor, tempo 1,1× i odbicie lustrzane.
 Ustawienia zapisują się razem z projektem. Napisy mają domyślnie rozmiar 84 przy szerokości
-1080 px (o 20% większy); bardzo długie frazy dopasowują się do szerokości kadru.
+1080 px; można wybrać 24–160 px oraz jedną z 20 dołączonych czcionek.
+Bardzo długie frazy dopasowują się do szerokości kadru.
 Przy tempie 1,1× czasy słów w napisach w obrazie i plikach SRT/ASS są skracane
 razem z obrazem i dźwiękiem. Zapisana transkrypcja zachowuje czasy filmu źródłowego.
 
@@ -109,13 +110,25 @@ Modele Whisper są w `models`. Gotowa transkrypcja jest używana ponownie przy w
 
 ## Kadrowanie i ponowne użycie transkrypcji
 
-„Cały obraz · czarne pasy” dopasowuje cały film do 1080×1920 bez obcinania boków.
+„Cały obraz · czarne pasy” przy domyślnym przybliżeniu 1× dopasowuje cały film
+do 1080×1920 bez obcinania boków.
 Dla poziomego filmu pasy pojawiają się u góry i u dołu. „Wypełnij · środek” przycina obraz,
 a „Podążaj za twarzą” używa lokalnego YuNet / OpenCV do przesuwania pionowego kadru.
 Przy wielu osobach wybierana jest duża twarz z preferencją zachowania ciągłości.
 Gdy w całym klipie nie wykryto twarzy, eksport zachowuje cały obraz z pasami.
 Po chwilowym zniknięciu twarzy kadr pozostaje w ostatnim położeniu.
 Podgląd i eksport używają tego samego trybu. Oryginalny format zachowuje proporcje filmu.
+
+W trybie całego obrazu suwak „Przybliżenie” ustawia 1–4×. Przeciągnij zdjęcie w podglądzie,
+aby wybrać punkt źródła; po ustawieniu fokusu można też użyć strzałek.
+Kółko myszy zmienia przybliżenie. Odkryte obszary wypełniają się czernią.
+Położenie źródła zapisuje się jako współrzędne 0–1. `video_layout.py` wylicza wspólną
+geometrię podglądu oraz skalowania, przycięcia i czarnego dopełnienia w eksporcie.
+
+Podążanie za twarzą analizuje obraz około 8 razy na sekundę. Wygładzanie korzysta
+z rzeczywistych czasów klatek i stałej 0,48 s; ograniczone krzywe sześcienne wyznaczają
+położenie przycięcia dla każdej klatki bez przekraczania celów ruchu.
+Test obejmuje rzeczywiste klatki eksportu 60 FPS i materiał ze zmiennym klatkażem (VFR).
 
 Obok filmu dostępne są trzy działania:
 
@@ -129,6 +142,14 @@ dla tego samego pliku. Można zastąpić ją ręcznie przyciskiem „Wczytaj”.
 Wczytana transkrypcja jest zapamiętywana. Ponowny wybór klipów używa gotowego tekstu,
 a zmiana kadrowania wymaga tylko ponownego eksportu; nie wymaga ani Whispera, ani Codexa.
 Ponowny wybór innych momentów wywołuje Codex, ale nie powtarza transkrypcji.
+
+„Edytuj napisy” w nagłówku otwiera listę rzeczywistych segmentów gotowej transkrypcji.
+Popraw tekst i kliknij „Zapisz fragment” albo Ctrl+Enter. Początek i koniec segmentu
+pozostają bez zmian. Przy tej samej liczbie słów zachowane są ich istniejące czasy.
+Po dodaniu lub usunięciu słów aplikacja rozkłada słowa ponownie w istniejącym przedziale
+czasowym i prosi o sprawdzenie synchronizacji w podglądzie. Edycja zapisuje się lokalnie
+i nie uruchamia AI ani ponownej transkrypcji. Niezapisane poprawki są usuwane po
+zamknięciu edytora; zapis jednego fragmentu zachowuje poprawki innych otwartych fragmentów.
 
 ## Sprzęt i konto
 
@@ -163,9 +184,11 @@ użytkownika nadal ma pierwszeństwo. Licencja i autor: THIRD_PARTY_NOTICES.md.
 
 - Wybór momentów odbywa się na podstawie mowy. Lokalne wykrywanie twarzy służy kadrowaniu.
 - Wykrywanie twarzy nie ustala, kto mówi; przy wielu osobach sprawdź wynik podglądu.
-- Napisy w klipach to krótkie frazy do 4 słów, wielkimi literami, czcionką Anton.
-  W trybie całego obrazu pojawiają się na dolnym czarnym pasie; jeśli pas jest za mały,
+- Napisy w klipach to krótkie frazy do 4 słów, wielkimi literami, w wybranej czcionce
+  (domyślnie Anton). Przy automatycznym położeniu w trybie całego obrazu pojawiają się
+  na dolnym czarnym pasie; jeśli pas jest za mały,
   aplikacja rezerwuje miejsce pod obrazem. Tryby wypełnienia i twarzy mają napisy w dolnej części kadru.
+  Własne położenie napisów zastępuje automatyczne ustawienie.
   Słowa dochodzą kolejno w grupie do 4 słów, a aktualnie wypowiadane słowo jest żółte.
   Nowe transkrypcje zapisują czasy słów w JSON. Starsze transkrypcje i SRT są dopasowywane
   do dźwięku lokalnie przez Whisper / CTranslate2, bez zmiany tekstu i bez wywołania Codexa.
@@ -249,19 +272,51 @@ Test używa kontrolowanego wyniku AI, natomiast eksport FFmpeg i dekodowanie QtM
 
 ## Podgląd ustawień
 
-Po prawej stronie jest stały podgląd na lekko rozmytym, przykładowym zdjęciu osoby.
-Zmiana formatu, kadrowania, kolorów, odbicia i napisów od razu zmienia ten kadr.
-Napisy korzystają z tej samej czcionki Anton i rozmiaru co eksport; ich animację można
-wstrzymać. Przyspieszenie 1,1× zmienia tempo animacji i pokazywaną długość wynikowego klipu.
+Po prawej stronie jest stały panel o szerokości 248 px z lekko rozmytym,
+przykładowym zdjęciem osoby. Ramka iPhone odwzorowuje dostarczoną referencję
+przez natywną geometrię QML. Wysoki ekran telefonu mieści niezniekształcony kadr
+eksportu 9:16 lub oryginalny 16:9 zdjęcia; pozostałe miejsce jest czarne.
+Zmiana formatu, kadrowania, kolorów, odbicia i napisów od razu zmienia podgląd.
+
+Przeciągnij całą linię przykładowych napisów albo ustaw ją strzałkami po nadaniu fokusu.
+Pola X i Y w lewym panelu przyjmują położenie środka tekstu w procentach kadru.
+Rozmiar ustawisz suwakiem lub polem liczbowym w zakresie 24–160 px dla szerokości 1080 px.
+Wybrana czcionka i rozmiar obowiązują również w eksporcie. „Reset pozycji” przywraca
+automatyczne położenie napisów, przybliżenie 1× i środkowy punkt źródła.
+Ustawienia położenia, czcionki, rozmiaru oraz przybliżenia i kadru zapisują się z projektem.
+
+Lista zawiera 20 rzeczywistych, lokalnie dołączonych czcionek; każda nazwa jest pokazana
+w swojej rodzinie. Dostępne rodziny: Anton, Bebas Neue, Montserrat, Poppins, Inter,
+Roboto, Oswald, Open Sans, Lato, Nunito, Rubik, Barlow Condensed, Archivo Black,
+DM Sans, Fjalla One, Raleway, Quicksand, Lobster, Pacifico i Bungee.
+To wybór czcionek, bez deklarowanego rankingu popularności. Dokładne pliki, źródła
+i sumy kontrolne są w `assets/fonts/provenance.json`; licencje w `THIRD_PARTY_NOTICES.md`.
+
+Animację słów można wstrzymać. Przy wyłączonych animacjach Windows wszystkie słowa są
+widoczne, a odtwarzanie animacji jest wyłączone. Przyspieszenie 1,1× zmienia tempo
+animacji i pokazywaną długość wynikowego klipu.
 Tryb Film · minuty pokazuje 60 s źródła lub 54,5 s po przyspieszeniu. Dokładność Whisper
 jest opisana pod podglądem, bo zmienia rozpoznawanie mowy, a nie wygląd obrazu.
 
 Zdjęcie jest lokalne, wygenerowane wbudowanym narzędziem imagegen; nie wymaga internetu
 i nie zastępuje miniatury dodanego filmu. Plik: `assets/settings-preview-person.png`.
 Dokładny prompt jest w metadanych PNG i w `assets/settings-preview-person.prompt.txt`.
-Podgląd mieści się w oknie 1360×900 i 1100×780; respektuje wyłączone animacje Windows.
-Test klikający kontrolki: `tests/settings_preview_review.py` (wymaga lokalnego projektu
-`checks/qt/project.json` i powiązanego testowego filmu).
+Podgląd pozostaje widoczny w zakładkach Film i Pobierz VOD w oknie 1360×900 i 1100×780.
+Test `tests/settings_preview_review.py` sprawdza rzeczywiste kliknięcia, przeciąganie
+napisów i obrazu, strzałki, pola położenia i rozmiaru, wybór czcionki, proporcje telefonu,
+odbicie, kolor i wyłączone animacje. Wymaga lokalnego projektu `checks/qt/project.json`
+i powiązanego testowego filmu.
+
+Cztery testy działające bez sieci są włączone do Windows release CI:
+
+- `tests/caption_editor_review.py`: rzeczywisty edytor i backend, zachowanie czasów,
+  przeliczenie słów, szkice, błędy zapisu, blokada podczas pracy i fokus.
+- `tests/layout_caption_review.py`: rzeczywisty eksport FFmpeg i dekodowane piksele RGB,
+  punkt źródła, czarne dopełnienie, czcionka, rozmiar, położenie, odbicie i zapis projektu.
+- `tests/face_smoothing_review.py`: rzeczywiste klatki 60 FPS i VFR, wygładzanie,
+  ograniczenie krzywych, YuNet, brak twarzy i anulowanie.
+- `tests/font_catalog_review.py`: wszystkie 20 plików TTF, licencje i sumy kontrolne,
+  polskie znaki oraz rzeczywisty wybór rodziny w Qt, Pillow i FFmpeg/libASS.
 
 ## Pobieranie i aktualizacje
 

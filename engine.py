@@ -228,9 +228,11 @@ class Pipeline:
         return selected
 
     def export(self, source, clips, segments, destination, vertical=True, burn=False, encoder='auto', framing='fit', timing_work=None,
-               light_color=False, speed_up=False, mirror=False):
+               light_color=False, speed_up=False, mirror=False, caption_font='Anton', caption_size=84,
+               caption_position=None, fit_zoom=1, fit_focus=(.5, .5)):
         from framing import FIT_FILTER, CENTER_FILTER, face_filter
-        from captions import phrases, placement, ass_text, progressive_cues, retime_cues, FONT_DIR
+        from captions import phrases, ass_text, progressive_cues, retime_cues, FONT_DIR
+        from video_layout import frame_layout, letterbox_filter
         if framing not in ('fit', 'center', 'face'):
             raise ValueError('Nieznany tryb kadrowania.')
         destination = Path(destination)
@@ -263,28 +265,37 @@ class Pipeline:
             partial = destination / f'{stem}.partial.mp4'
             command_file = destination / f'{stem}.crop.txt'
             filters = []
-            if vertical:
-                if framing == 'face':
-                    filters.append(face_filter(source, clip['start'], clip['end'], command_file,
-                                               self.check, self.log))
-                else:
-                    filters.append(FIT_FILTER if framing == 'fit' else CENTER_FILTER)
-            else:
-                filters.append('scale=trunc(iw/2)*2:trunc(ih/2)*2,setsar=1')
-            # Apply requested transforms before ASS subtitles so captions stay readable.
             if light_color:
                 filters.append('eq=contrast=1.03:brightness=0.02:saturation=1.05')
+            fitted = vertical and framing == 'fit'
+            if mirror and fitted:
+                filters.append('hflip')
+            if vertical:
+                if framing == 'face':
+                    follow = face_filter(source, clip['start'], clip['end'], command_file,
+                                         self.check, self.log)
+                    fitted = follow == FIT_FILTER
+                    filters.append(follow)
+                else:
+                    filters.append(FIT_FILTER if fitted else CENTER_FILTER)
+            else:
+                filters.append('scale=trunc(iw/2)*2:trunc(ih/2)*2,setsar=1')
+            layout = frame_layout(metadata['width'], metadata['height'], vertical, fitted,
+                                  fit_zoom if framing == 'fit' else 1,
+                                  *(fit_focus if framing == 'fit' else (.5, .5)),
+                                  caption_position=caption_position, reserve_captions=burn and bool(subtitle))
+            if fitted:
+                filters[-1] = letterbox_filter(layout)
+            # Apply requested transforms before ASS subtitles so captions stay readable.
             if speed_up:
                 filters.append('setpts=(PTS-STARTPTS)/1.1')
-            if mirror:
+            if mirror and not (vertical and framing == 'fit'):
                 filters.append('hflip')
             if burn and subtitle:
-                width, height, y, reserved = placement(metadata['width'], metadata['height'],
-                                                      vertical, filters[0] == FIT_FILTER)
-                if reserved:
-                    filters[0] = reserved
+                width, height = layout['canvas_width'], layout['canvas_height']
                 styled = destination / f'{stem}.captions.ass'
-                styled.write_text(ass_text(cues, width, height, y), encoding='utf-8')
+                styled.write_text(ass_text(cues, width, height, layout['caption_y'], layout['caption_x'],
+                                           caption_font, caption_size), encoding='utf-8')
                 fonts = FONT_DIR.as_posix().replace(':', '\\:')
                 filters.append(f"ass=filename='{styled.name}':fontsdir='{fonts}'")
 
@@ -319,7 +330,9 @@ class Pipeline:
                 command_file.unlink(missing_ok=True)
         (destination / 'clips.json').write_text(json.dumps({'source': str(source), 'clips': clips,
             'files': written, 'vertical': vertical, 'framing': framing, 'burn': burn,
-            'light_color': light_color, 'speed_up': speed_up, 'mirror': mirror}, ensure_ascii=False, indent=2), encoding='utf-8')
+            'light_color': light_color, 'speed_up': speed_up, 'mirror': mirror,
+            'caption_font': caption_font, 'caption_size': caption_size, 'caption_position': caption_position,
+            'fit_zoom': fit_zoom, 'fit_focus': fit_focus}, ensure_ascii=False, indent=2), encoding='utf-8')
         return written
 
 

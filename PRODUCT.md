@@ -17,17 +17,39 @@ Zmiana kadrowania nie wymaga ponownej transkrypcji ani wyboru momentów przez Co
 Liczba klipów nie jest pytaniem dla użytkownika: aplikacja dobiera ją automatycznie
 do długości filmu i zakresu 30–60 sekund.
 
-Napisy w klipach: frazy do 4 słów, czcionka Anton. Tryb całego obrazu umieszcza tekst
+Napisy w klipach: frazy do 4 słów, domyślnie czcionka Anton. Użytkownik wybiera spośród
+20 lokalnie dołączonych czcionek, rozmiar 24–160 px dla szerokości 1080 px oraz położenie
+tekstu przez przeciąganie, strzałki lub pola procentowe. Podgląd i eksport używają
+wybranej czcionki. Automatyczne położenie w trybie całego obrazu umieszcza tekst
 na czarnym pasie pod filmem. Nowe transkrypcje mają czasy słów; starsze można użyć
 ponownie z lokalnym dopasowaniem słów do dźwięku. Słowa dochodzą kolejno do grupy,
 aktualne słowo jest żółte, a wcześniej wypowiedziane zostają białe. Dopasowanie jest
 zapamiętywane i nie wywołuje Codexa ani nie tworzy tekstu transkrypcji od nowa.
 
-Stały podgląd ustawień na lokalnym, przykładowym zdjęciu osoby pokazuje format,
-kadrowanie, kolor, odbicie i napisy jeszcze przed eksportem. Animacja napisów
+Stały podgląd ustawień w prawym panelu o szerokości 248 px pokazuje lokalne,
+przykładowe zdjęcie osoby wewnątrz ramki iPhone odtworzonej z dostarczonej referencji
+w natywnej geometrii QML. Pionowe 9:16 i oryginalne proporcje obrazu pozostają
+niezniekształcone wewnątrz wysokiego ekranu telefonu z czarnymi pasami. Podgląd pokazuje
+format, kadrowanie, kolor, odbicie i napisy jeszcze przed eksportem. Animacja napisów
 uwzględnia tempo, a opis pod kadrem pokazuje wynikową długość klipu i ustawienie
-transkrypcji. Podgląd działa także w zakładce pobierania VOD i nie zastępuje
-materiału użytkownika.
+transkrypcji. Podgląd działa także w zakładce pobierania VOD, przy oknie 1360×900
+i minimum 1100×780. W trybie całego obrazu użytkownik ustawia przybliżenie 1–4×
+i przesuwa punkt źródła; odkryte obszary są czarne. Położenie napisów i punkt źródła
+są zapisane jako współrzędne 0–1. Reset przywraca automatyczne położenie napisów
+i pełny obraz. Podgląd i eksport korzystają ze wspólnej geometrii. Ustawienia
+czcionki, rozmiaru, położenia, przybliżenia i kadru zapisują się w projekcie.
+Zdjęcie jest oznaczone jako przykładowe i nie zastępuje materiału użytkownika.
+
+„Edytuj napisy” w nagłówku otwiera rzeczywiste segmenty gotowej transkrypcji z ich
+czasami. Zapis poprawionego tekstu zachowuje początek i koniec segmentu. Przy tej samej
+liczbie słów zachowuje ich czasy; dodanie lub usunięcie słów rozkłada je ponownie
+w istniejącym przedziale czasowym i prosi o sprawdzenie synchronizacji w podglądzie.
+Edycja zapisuje się lokalnie, bez wywołania AI ani ponownej transkrypcji.
+
+Podążanie za twarzą wykrywa twarz lokalnie około 8 razy na sekundę. Wygładzanie
+uwzględnia rzeczywisty upływ czasu (stała 0,48 s), a ograniczone krzywe sześcienne
+wyznaczają położenie każdej klatki bez przeskoków i przekraczania celów ruchu.
+Rzeczywisty eksport jest sprawdzany dla 60 FPS i zmiennego klatkażu.
 
 ## Platform
 Windows desktop, Python 3.11+ / PySide6 + QML (Qt Quick).
