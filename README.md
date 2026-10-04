@@ -96,6 +96,12 @@ Limity są współdzielone z Claude i Claude Code. Po ich wykorzystaniu poczekaj
 nie włączaj dodatkowych płatnych kredytów, jeśli chcesz pozostać w ramach abonamentu.
 [Claude Code w planie Pro/Max](https://support.claude.com/en/articles/11145838-use-claude-code-with-your-pro-or-max-plan).
 
+CLIPFARM przekazuje polecenie z transkrypcją do Claude przez wejście standardowe,
+aby długie filmy nie przekraczały limitu argumentów Windows ani skryptów npm.
+Błąd `The command line is too long` w starszym wydaniu wymaga aktualizacji CLIPFARM;
+potem można ponowić wybór fragmentów z już zapisanej transkrypcji.
+[Wejście standardowe Claude Code](https://code.claude.com/docs/en/headless#pipe-data-through-claude).
+
 ### Sprawdzenie, z którego konta korzysta aplikacja
 
 Oba narzędzia muszą działać w **tym samym koncie Windows**, z którego uruchamiasz CLIPFARM.
@@ -480,3 +486,7 @@ Log instalacji: `.local/updates/<wersja>/install.log`.
 Testy aktualizacji: `tests/update_review.py`, `tests/update_restart_review.py`, `tests/update_ui_review.py`.
 Pierwsze dwa działają bez sieci; ostatni klika rzeczywisty interfejs Qt i sprawdza zapis projektu,
 animację postępu oraz cykliczne sprawdzanie wersji. Wymaga `checks/synthetic.mp4`.
+
+`tests/agent_cli_review.py` sprawdza długie transkrypcje przez rzeczywiste procesy
+testowe i skrypt Windows `.cmd`, bez zapytań do AI. Weryfikuje przekazanie całego tekstu
+przez stdin i odpowiedzi JSON. Test jest częścią publikacji Windows.

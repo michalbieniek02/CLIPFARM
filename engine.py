@@ -184,8 +184,9 @@ class Pipeline:
         if claude:
             try:
                 self.log('AI: Codex niedostępny — znaleziono Claude Code, używam zalogowanego konta.')
-                raw, _ = self.run(claude + ['-p', prompt, '--output-format', 'json'],
-                                  cwd=work, timeout=600)
+                # Keep the transcript out of Windows' bounded command line.
+                raw, _ = self.run(claude + ['-p', '--output-format', 'json'],
+                                  cwd=work, input_text=prompt, timeout=600)
                 return parse_agent_json(raw)
             except (RuntimeError, OSError, ValueError) as exc:
                 errors.append(f'Claude Code: {exc}')
