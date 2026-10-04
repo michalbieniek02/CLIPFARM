@@ -23,6 +23,7 @@ if os.name == 'nt':
         os.environ['PATH'] = str(folder) + os.pathsep + os.environ.get('PATH', '')
         _dll_handles.append(os.add_dll_directory(str(folder)))
 MODEL = 'gpt-6.1-sol'
+CLAUDE_MODEL = 'sonnet'
 HIDDEN = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
 SCHEMA = {
     'type': 'object', 'additionalProperties': False,
@@ -77,7 +78,9 @@ class Pipeline:
                 except subprocess.TimeoutExpired:
                     sent = True
             if proc.returncode:
-                raise RuntimeError(err[-3000:] or out[-3000:] or 'Proces zakończył się błędem.')
+                # Claude may put diagnostics on stderr and the actual JSON error on stdout.
+                details = '\n'.join(value[-3000:] for value in (err, out) if value.strip())
+                raise RuntimeError(details or 'Proces zakończył się błędem.')
             return out, err
         finally:
             if proc.poll() is None:
@@ -183,9 +186,9 @@ class Pipeline:
                 output.unlink(missing_ok=True)
         if claude:
             try:
-                self.log('AI: Codex niedostępny — znaleziono Claude Code, używam zalogowanego konta.')
+                self.log('AI: Codex niedostępny — znaleziono Claude Code, używam zalogowanego konta · Sonnet.')
                 # Keep the transcript out of Windows' bounded command line.
-                raw, _ = self.run(claude + ['-p', '--output-format', 'json'],
+                raw, _ = self.run(claude + ['-p', '--model', CLAUDE_MODEL, '--output-format', 'json'],
                                   cwd=work, input_text=prompt, timeout=600)
                 return parse_agent_json(raw)
             except (RuntimeError, OSError, ValueError) as exc:

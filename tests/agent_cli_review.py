@@ -22,13 +22,15 @@ ANSWER = {'clips': [{'start': 12.34, 'end': 56.78, 'score': 9,
                      'hook_sentence': 'Pe\u0142ny tekst bez obci\u0119cia.'}]}
 
 CLAUDE_FIXTURE = '''import json
+import os
 from pathlib import Path
 import sys
 
 root = Path(__file__).resolve().parent
 (root / "claude-stdin.bin").write_bytes(sys.stdin.buffer.read())
 (root / "claude-call.json").write_text(
-    json.dumps({"argv": sys.argv[1:], "cwd": str(Path.cwd())}), encoding="utf-8")
+    json.dumps({"argv": sys.argv[1:], "cwd": str(Path.cwd()),
+                "inherited_model": os.environ.get("ANTHROPIC_MODEL")}), encoding="utf-8")
 sys.stdout.buffer.write((root / "claude-response.txt").read_bytes())
 '''
 
@@ -102,7 +104,7 @@ class AgentCliReview(unittest.TestCase):
         call = json.loads((self.fixture / f'{agent}-call.json').read_text(encoding='utf-8'))
         self.assertEqual(Path(call['cwd']).resolve(), self.work.resolve())
         if agent == 'claude':
-            self.assertEqual(call['argv'], ['-p', '--output-format', 'json'])
+            self.assertEqual(call['argv'], ['-p', '--model', 'sonnet', '--output-format', 'json'])
         else:
             self.assertEqual(call['argv'][0], 'exec')
             self.assertEqual(call['argv'][-1], '-')
@@ -115,6 +117,18 @@ class AgentCliReview(unittest.TestCase):
         self.assertEqual(run.call_count, 1)
         self.received('claude')
         self.assertFalse((self.fixture / 'codex-call.json').exists())
+
+    def test_explicit_claude_model_is_sent_despite_inherited_model_hint(self):
+        previous = os.environ.get('ANTHROPIC_MODEL')
+        with patch.dict(os.environ, {'ANTHROPIC_MODEL': 'CC'}):
+            self.request([sys.executable, str(self.claude_script)])
+            self.received('claude')
+            call = json.loads((self.fixture / 'claude-call.json').read_text(encoding='utf-8'))
+            self.assertEqual(call['inherited_model'], 'CC')
+            self.assertEqual(os.environ['ANTHROPIC_MODEL'], 'CC')
+        self.assertEqual(os.environ.get('ANTHROPIC_MODEL'), previous)
+        # The offline child records explicit CLI arguments and inherited env;
+        # it does not emulate or prove Claude Code's actual model resolution.
 
     @unittest.skipUnless(os.name == 'nt', 'cmd.exe shims are specific to Windows')
     def test_windows_cmd_shim_accepts_long_prompt_without_command_expansion(self):
@@ -154,6 +168,21 @@ class AgentCliReview(unittest.TestCase):
         self.received('claude')
         self.assertEqual(list(self.work.glob('selection-*.json')),
                          [self.work / 'selection-schema.json'])
+
+    def test_nonzero_process_keeps_stderr_diagnostic_and_stdout_json_error(self):
+        diagnostic = '[claude-code:unrecognized_model] {"model":"CC","query_source":"sdk"}'
+        error = json.dumps({'type': 'result', 'subtype': 'error_during_execution',
+                            'is_error': True,
+                            'errors': ['Rate limit reached. Przekroczono limit \u017c\u0105da\u0144 \U0001f3ac.']},
+                           ensure_ascii=False)
+        script = ('import sys; '
+                  f'sys.stderr.buffer.write({diagnostic.encode("utf-8")!r}); '
+                  f'sys.stdout.buffer.write({error.encode("utf-8")!r}); '
+                  'sys.exit(1)')
+        with self.assertRaises(RuntimeError) as raised:
+            Pipeline().run([sys.executable, '-c', script], cwd=self.fixture, timeout=5)
+        self.assertIn(diagnostic, str(raised.exception))
+        self.assertIn(error, str(raised.exception))
 
     def test_cancellation_propagates_without_trying_another_agent(self):
         for codex in (None, [sys.executable, str(self.codex_script)]):

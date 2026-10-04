@@ -88,8 +88,8 @@ claude auth status --text
 
 Zaloguj własne konto **Claude Pro lub Max przez claude.ai**. Wybierz subskrypcję,
 a nie Claude Console / API. Przy starszym CLI uruchom `claude` i użyj `/login`,
-a `/status` sprawdza aktywną sesję. CLIPFARM uruchamia lokalne Claude Code i używa
-jego domyślnego modelu. [Instalacja Claude Code](https://code.claude.com/docs/en/quickstart),
+a `/status` sprawdza aktywną sesję. CLIPFARM uruchamia lokalne Claude Code z modelem
+`sonnet`. [Instalacja Claude Code](https://code.claude.com/docs/en/quickstart),
 [polecenia logowania](https://code.claude.com/docs/en/cli-reference).
 
 Limity są współdzielone z Claude i Claude Code. Po ich wykorzystaniu poczekaj na reset;
@@ -101,6 +101,15 @@ aby długie filmy nie przekraczały limitu argumentów Windows ani skryptów npm
 Błąd `The command line is too long` w starszym wydaniu wymaga aktualizacji CLIPFARM;
 potem można ponowić wybór fragmentów z już zapisanej transkrypcji.
 [Wejście standardowe Claude Code](https://code.claude.com/docs/en/headless#pipe-data-through-claude).
+
+CLIPFARM przekazuje `--model sonnet`, aby wybór modelu nie zależał od wpisu
+`model` w ustawieniach Claude ani od `ANTHROPIC_MODEL` (np. `CC`). Ten wybór dotyczy
+tylko uruchomionej analizy; aplikacja nie zmienia ustawień ani logowania Claude.
+Mapowanie aliasu `ANTHROPIC_DEFAULT_SONNET_MODEL` lub konfiguracja własnego dostawcy
+nadal mogą zmienić model docelowy.
+[Wybór modelu i kolejność ustawień Claude Code](https://code.claude.com/docs/en/model-config#setting-your-model).
+Przy niepowodzeniu dziennik zachowuje zarówno diagnostykę, jak i właściwy błąd
+z odpowiedzi CLI; samo `unrecognized_model` nie wyjaśnia całego niepowodzenia.
 
 ### Sprawdzenie, z którego konta korzysta aplikacja
 
@@ -272,7 +281,7 @@ Pierwsze użycie innego modelu Whisper może pobrać go z Hugging Face.
 
 Aplikacja automatycznie wykrywa zalogowane narzędzie AI. Jeśli istnieje Codex CLI,
 używa jego konta i GPT 6.1 Sol. Jeśli Codex nie jest dostępny, a istnieje Claude Code,
-używa jego aktywnej sesji i domyślnego modelu Claude. Nie ma przełącznika dostawcy
+używa jego aktywnej sesji i modelu Sonnet. Nie ma przełącznika dostawcy
 ani pola klucza API. Rozliczenie zależy od aktywnej sesji CLI i zmiennych środowiska;
 konfigurację własnego abonamentu opisują warianty instalacji powyżej.
 Przy problemie z logowaniem uruchom `codex.cmd login` albo `claude auth login`.
