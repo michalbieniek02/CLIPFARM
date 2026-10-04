@@ -59,25 +59,14 @@ function New-ClipfarmShortcut {
         throw "Nie znaleziono folderu pulpitu: $Destination. Mozesz podac -DesktopPath z istniejacym folderem."
     }
     $shortcutPath = Join-Path ([IO.Path]::GetFullPath($Destination)) 'CLIPFARM.lnk'
-    $shell = New-Object -ComObject WScript.Shell
-    try {
-        $shortcut = $shell.CreateShortcut($shortcutPath)
-        $launcher = Join-Path $clipfarmRoot 'CLIPFARM.exe'
-        if (Test-Path -LiteralPath $launcher -PathType Leaf) {
-            $shortcut.TargetPath = $launcher
-            $shortcut.Arguments = ''
-        } else {
-            $shortcut.TargetPath = Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
-            $shortcut.Arguments = '-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "' + (Join-Path $clipfarmRoot 'Start-CLIPFARM.ps1') + '"'
-        }
-        $shortcut.WorkingDirectory = $clipfarmRoot
-        $shortcut.IconLocation = (Join-Path $clipfarmRoot 'assets\clipfarm.ico') + ',0'
-        $shortcut.Description = 'CLIPFARM - edytor klipow wideo'
-        $shortcut.Save()
-    } finally {
-        if ($shortcut) { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($shortcut) }
-        [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell)
+    [void][Reflection.Assembly]::LoadFrom((Join-Path $clipfarmRoot 'Install-CLIPFARM.exe'))
+    $launcher = Join-Path $clipfarmRoot 'CLIPFARM.exe'
+    $launcherArguments = ''
+    if (-not (Test-Path -LiteralPath $launcher -PathType Leaf)) {
+        $launcher = Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
+        $launcherArguments = '-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "' + (Join-Path $clipfarmRoot 'Start-CLIPFARM.ps1') + '"'
     }
+    [ClipfarmShortcut]::Save($shortcutPath, $launcher, $launcherArguments, $clipfarmRoot, (Join-Path $clipfarmRoot 'assets\clipfarm.ico'))
     Write-Host "Skrot CLIPFARM jest gotowy: $shortcutPath"
 }
 
@@ -88,7 +77,7 @@ try {
     Write-Host 'CLIPFARM - przygotowanie aplikacji'
     $env:TEMP = $clipfarmRoot
     $env:TMP = $clipfarmRoot
-    foreach ($required in @('app.py', 'qt_app.py', 'qml\Main.qml', 'requirements.txt', 'assets\clipfarm.ico')) {
+    foreach ($required in @('app.py', 'qt_app.py', 'qml\Main.qml', 'requirements.txt', 'assets\clipfarm.ico', 'Install-CLIPFARM.exe')) {
         if (-not (Test-Path -LiteralPath (Join-Path $clipfarmRoot $required) -PathType Leaf)) {
             throw "Brak pliku $required. Wypakuj caly ZIP do jednego folderu i uruchom instalator ponownie."
         }

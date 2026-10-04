@@ -2,6 +2,77 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.ComTypes;
+
+// WScript.Shell.Save uses the system ANSI code page for the link filename.
+// IShellLinkW + IPersistFile keeps both filenames and shortcut fields Unicode.
+public static class ClipfarmShortcut
+{
+    [ComImport, Guid("00021401-0000-0000-C000-000000000046")]
+    private class ShellLink { }
+
+    [ComImport, Guid("000214F9-0000-0000-C000-000000000046"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    private interface IShellLinkW
+    {
+        void GetPath([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder path, int count, IntPtr data, uint flags);
+        void GetIDList(out IntPtr id);
+        void SetIDList(IntPtr id);
+        void GetDescription([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder text, int count);
+        void SetDescription([MarshalAs(UnmanagedType.LPWStr)] string text);
+        void GetWorkingDirectory([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder path, int count);
+        void SetWorkingDirectory([MarshalAs(UnmanagedType.LPWStr)] string path);
+        void GetArguments([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder args, int count);
+        void SetArguments([MarshalAs(UnmanagedType.LPWStr)] string args);
+        void GetHotkey(out short key);
+        void SetHotkey(short key);
+        void GetShowCmd(out int command);
+        void SetShowCmd(int command);
+        void GetIconLocation([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder path, int count, out int index);
+        void SetIconLocation([MarshalAs(UnmanagedType.LPWStr)] string path, int index);
+        void SetRelativePath([MarshalAs(UnmanagedType.LPWStr)] string path, uint reserved);
+        void Resolve(IntPtr window, uint flags);
+        void SetPath([MarshalAs(UnmanagedType.LPWStr)] string path);
+    }
+
+    public static void Save(string filename, string target, string args, string directory, string icon)
+    {
+        var link = (IShellLinkW)new ShellLink();
+        try
+        {
+            link.SetPath(target);
+            link.SetArguments(args);
+            link.SetWorkingDirectory(directory);
+            link.SetIconLocation(icon, 0);
+            link.SetDescription("CLIPFARM - edytor klipow wideo");
+            ((IPersistFile)link).Save(filename, true);
+        }
+        finally { Marshal.FinalReleaseComObject(link); }
+    }
+
+    // Read native persisted fields for installation verification.
+    public static string[] Read(string filename)
+    {
+        var link = (IShellLinkW)new ShellLink();
+        try
+        {
+            ((IPersistFile)link).Load(filename, 0);
+            var target = new StringBuilder(32768);
+            var args = new StringBuilder(32768);
+            var directory = new StringBuilder(32768);
+            var icon = new StringBuilder(32768);
+            var description = new StringBuilder(1024);
+            int index;
+            link.GetPath(target, target.Capacity, IntPtr.Zero, 4);
+            link.GetArguments(args, args.Capacity);
+            link.GetWorkingDirectory(directory, directory.Capacity);
+            link.GetIconLocation(icon, icon.Capacity, out index);
+            link.GetDescription(description, description.Capacity);
+            return new[] { target.ToString(), args.ToString(), directory.ToString(), icon.ToString() + "," + index, description.ToString() };
+        }
+        finally { Marshal.FinalReleaseComObject(link); }
+    }
+}
 
 internal static class Installer
 {

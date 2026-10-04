@@ -2,13 +2,12 @@ $ErrorActionPreference = 'Stop'
 $clipfarmRepo = Split-Path -Parent $PSScriptRoot
 $clipfarmChecks = Join-Path $clipfarmRepo 'checks'
 $clipfarmTestRoot = Join-Path $clipfarmChecks ('installer-' + [Guid]::NewGuid().ToString('N'))
-$clipfarmFixture = Join-Path $clipfarmTestRoot ('CLIPFARM test ' + [char]0x0142 + [char]0x00F3 + [char]0x017C)
-$clipfarmDesktop = Join-Path $clipfarmTestRoot ('Pulpit ' + [char]0x015B + [char]0x0107)
+$clipfarmFixture = Join-Path $clipfarmTestRoot ('CLIPFARM test ' + [char]0x0142 + [char]0x00F3 + [char]0x017C + [char]0x6F22)
+$clipfarmDesktop = Join-Path $clipfarmTestRoot ('Pulpit ' + [char]0x015B + [char]0x0107 + [char]0x5B57)
 $clipfarmCompiler = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
 $clipfarmSavedLog = $env:CLIPFARM_INSTALLER_TEST_LOG
 $clipfarmSavedPip = $env:CLIPFARM_INSTALLER_TEST_PIP_RESULT
 $clipfarmSavedMinor = $env:CLIPFARM_INSTALLER_TEST_MINOR
-$clipfarmShell = $null
 
 function Assert-Installer {
     param([bool]$Condition, [string]$Message)
@@ -27,6 +26,7 @@ function Invoke-TestInstaller {
 }
 
 try {
+    [void][Reflection.Assembly]::LoadFrom((Join-Path $clipfarmRepo 'Install-CLIPFARM.exe'))
     [void](New-Item -ItemType Directory -Path $clipfarmFixture, $clipfarmDesktop, (Join-Path $clipfarmFixture 'assets'), (Join-Path $clipfarmFixture 'qml') -Force)
     foreach ($file in @('Install-CLIPFARM.ps1', 'Install-CLIPFARM.exe', 'CLIPFARM.exe', 'Start-CLIPFARM.ps1')) {
         Copy-Item -LiteralPath (Join-Path $clipfarmRepo $file) -Destination $clipfarmFixture
@@ -53,7 +53,13 @@ using System;
 using System.IO;
 using System.Reflection;
 internal static class FakePython {
-    static string Json(string value) { return value.Replace("\\", "\\\\").Replace("\"", "\\\""); }
+    static string Json(string value) {
+        var encoded = new System.Text.StringBuilder();
+        foreach (char c in value.Replace("\\", "\\\\").Replace("\"", "\\\""))
+            if (c > 127) encoded.Append("\\u").Append(((int)c).ToString("x4"));
+            else encoded.Append(c);
+        return encoded.ToString();
+    }
     static int Main(string[] args) {
         string executable = Assembly.GetExecutingAssembly().Location;
         string folder = Path.GetDirectoryName(executable);
@@ -101,13 +107,11 @@ internal static class FakePython {
     [void](Invoke-TestInstaller @('-DesktopPath', $clipfarmDesktop, '-PythonPath', $basePython))
     $linkPath = Join-Path $clipfarmDesktop 'CLIPFARM.lnk'
     Assert-Installer (Test-Path -LiteralPath $linkPath) 'Success did not create the shortcut.'
-    $clipfarmShell = New-Object -ComObject WScript.Shell
-    $link = $clipfarmShell.CreateShortcut($linkPath)
-    Assert-Installer ($link.TargetPath -eq (Join-Path $clipfarmFixture 'CLIPFARM.exe')) 'Shortcut target does not use the bundled launcher.'
-    Assert-Installer ($link.WorkingDirectory -eq $clipfarmFixture) 'Shortcut working directory is incorrect.'
-    Assert-Installer ($link.IconLocation -eq ((Join-Path $clipfarmFixture 'assets\clipfarm.ico') + ',0')) 'Shortcut branded icon is incorrect.'
-    Assert-Installer ($link.Description -match 'CLIPFARM') 'Shortcut description is missing.'
-    [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($link)
+    $link = [ClipfarmShortcut]::Read($linkPath)
+    Assert-Installer ($link[0] -eq (Join-Path $clipfarmFixture 'CLIPFARM.exe')) 'Shortcut target does not use the bundled launcher.'
+    Assert-Installer ($link[2] -eq $clipfarmFixture) 'Shortcut working directory is incorrect.'
+    Assert-Installer ($link[3] -eq ((Join-Path $clipfarmFixture 'assets\clipfarm.ico') + ',0')) 'Shortcut branded icon is incorrect.'
+    Assert-Installer ($link[4] -match 'CLIPFARM') 'Shortcut description is missing.'
     Set-Content -LiteralPath (Join-Path $clipfarmFixture 'runtime\keep.txt') -Value 'preserved runtime' -Encoding ascii
     [void](Invoke-TestInstaller @('-DesktopPath', $clipfarmDesktop))
     $calls = Get-Content -LiteralPath $env:CLIPFARM_INSTALLER_TEST_LOG
@@ -128,11 +132,10 @@ internal static class FakePython {
     # Recreate only the link without touching pip; also exercise the PS1 launcher fallback.
     Remove-Item -LiteralPath (Join-Path $clipfarmFixture 'CLIPFARM.exe')
     [void](Invoke-TestInstaller @('-DesktopPath', $errorDesktop, '-ShortcutOnly'))
-    $link = $clipfarmShell.CreateShortcut((Join-Path $errorDesktop 'CLIPFARM.lnk'))
-    Assert-Installer ($link.TargetPath -like '*\powershell.exe') 'Fallback shortcut does not target PowerShell.'
-    Assert-Installer ($link.Arguments.Contains('"' + (Join-Path $clipfarmFixture 'Start-CLIPFARM.ps1') + '"')) 'Fallback script path is not quoted.'
-    Assert-Installer ($link.WorkingDirectory -eq $clipfarmFixture) 'Fallback working directory is incorrect.'
-    [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($link)
+    $link = [ClipfarmShortcut]::Read((Join-Path $errorDesktop 'CLIPFARM.lnk'))
+    Assert-Installer ($link[0] -like '*\powershell.exe') 'Fallback shortcut does not target PowerShell.'
+    Assert-Installer ($link[1].Contains('"' + (Join-Path $clipfarmFixture 'Start-CLIPFARM.ps1') + '"')) 'Fallback script path is not quoted.'
+    Assert-Installer ($link[2] -eq $clipfarmFixture) 'Fallback working directory is incorrect.'
     $calls = Get-Content -LiteralPath $env:CLIPFARM_INSTALLER_TEST_LOG
     Assert-Installer (@($calls | Where-Object { $_ -like '-m|pip|*' }).Count -eq 3) 'ShortcutOnly called pip.'
 
@@ -152,7 +155,6 @@ internal static class FakePython {
     Assert-Installer ($failure -match 'Install-CLIPFARM.ps1') 'Wrapper did not report its missing script.'
     Write-Host 'PASS: real Python/venv, branded COM shortcut, Unicode paths, runtime reuse, user data preservation, pip failure, fallback and wrapper exit status.'
 } finally {
-    if ($clipfarmShell) { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($clipfarmShell) }
     $env:CLIPFARM_INSTALLER_TEST_LOG = $clipfarmSavedLog
     $env:CLIPFARM_INSTALLER_TEST_PIP_RESULT = $clipfarmSavedPip
     $env:CLIPFARM_INSTALLER_TEST_MINOR = $clipfarmSavedMinor
