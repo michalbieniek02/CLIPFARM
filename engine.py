@@ -30,8 +30,17 @@ SCHEMA = {
         'type': 'object', 'additionalProperties': False,
         'properties': {'start': {'type': 'number'}, 'end': {'type': 'number'},
                        'title': {'type': 'string'}, 'reason': {'type': 'string'},
-                       'score': {'type': 'integer'}, 'hook_sentence': {'type': 'string'}},
-        'required': ['start', 'end', 'title', 'reason', 'score', 'hook_sentence']}}},
+                       'score': {'type': 'integer', 'minimum': 1, 'maximum': 10},
+                       'hook_sentence': {'type': 'string'}, 'hook_cut_start': {'type': 'string'},
+                       'hook_text': {'type': 'string'}, 'hook_alternatives': {'type': 'array', 'items': {'type': 'string'}},
+                       'structure': {'type': 'string'}, 'loop': {'type': 'string'},
+                       'captions': {'type': 'array', 'items': {'type': 'string'}},
+                       'montage': {'type': 'string'}, 'titles': {'type': 'array', 'items': {'type': 'string'}},
+                       'description': {'type': 'string'}, 'hashtags': {'type': 'array', 'items': {'type': 'string'}},
+                       'risks': {'type': 'string'}},
+        'required': ['start', 'end', 'title', 'reason', 'score', 'hook_sentence', 'hook_cut_start',
+                     'hook_text', 'hook_alternatives', 'structure', 'loop', 'captions', 'montage',
+                     'titles', 'description', 'hashtags', 'risks']}}},
     'required': ['clips']
 }
 
@@ -206,7 +215,12 @@ class Pipeline:
             valid = validate_clips(data.get('clips'), duration, minimum, maximum)
             for clip in valid:
                 if clip['start'] >= batch[0]['start'] - .1 and clip['end'] <= batch[-1]['end'] + .1:
-                    clip['hook_sentence'] = verified_hook(clip, batch)
+                    clip['hook_sentence'] = verified_hook(clip, batch) or 'brak'
+                    cut = clip.get('hook_cut_start', 'brak')
+                    if isinstance(cut, float):
+                        boundaries = [s['start'] for s in batch] + [s['end'] for s in batch]
+                        if not any(abs(cut - boundary) <= .05 for boundary in boundaries):
+                            clip['hook_cut_start'] = 'brak'
                     candidates.append(clip)
         selected = choose_distinct(candidates, count)
         if not selected:
@@ -216,7 +230,7 @@ class Pipeline:
     def export(self, source, clips, segments, destination, vertical=True, burn=False, encoder='auto', framing='fit', timing_work=None,
                light_color=False, speed_up=False, mirror=False):
         from framing import FIT_FILTER, CENTER_FILTER, face_filter
-        from captions import phrases, placement, ass_text, progressive_cues, FONT_DIR
+        from captions import phrases, placement, ass_text, progressive_cues, retime_cues, FONT_DIR
         if framing not in ('fit', 'center', 'face'):
             raise ValueError('Nieznany tryb kadrowania.')
         destination = Path(destination)
@@ -240,8 +254,10 @@ class Pipeline:
             # Do not let players automatically overlay a second subtitle track
             # on the captions already burned into the image.
             srt = destination / f"{stem}{'.captions' if burn else ''}.srt"
-            cues = phrases(segments, clip['start'], clip['end'])
-            subtitle = subtitle_text(progressive_cues(cues), 0, clip['end'] - clip['start'])
+            speed = 1.1 if speed_up else 1.0
+            duration = clip['end'] - clip['start']
+            cues = retime_cues(phrases(segments, clip['start'], clip['end']), speed)
+            subtitle = subtitle_text(progressive_cues(cues), 0, duration / speed)
             srt.write_text(subtitle, encoding='utf-8')
             final = destination / f'{stem}.mp4'
             partial = destination / f'{stem}.partial.mp4'
@@ -259,7 +275,7 @@ class Pipeline:
             if light_color:
                 filters.append('eq=contrast=1.03:brightness=0.02:saturation=1.05')
             if speed_up:
-                filters.append('setpts=PTS/1.1')
+                filters.append('setpts=(PTS-STARTPTS)/1.1')
             if mirror:
                 filters.append('hflip')
             if burn and subtitle:
@@ -273,13 +289,15 @@ class Pipeline:
                 filters.append(f"ass=filename='{styled.name}':fontsdir='{fonts}'")
 
             def encode(hardware):
-                args = [ffmpeg, '-y', '-ss', str(clip['start']), '-i', str(source),
-                        '-t', str(clip['end'] - clip['start']), '-map', '0:v:0', '-map', '0:a:0?',
+                # Limit input in source time, before the video/audio speed filters.
+                # Output -t would otherwise include footage beyond the selected end.
+                args = [ffmpeg, '-y', '-ss', str(clip['start']), '-t', str(duration), '-i', str(source),
+                        '-map', '0:v:0', '-map', '0:a:0?',
                         '-vf', ','.join(filters), '-c:v', 'h264_nvenc' if hardware else 'libx264']
                 args += ['-preset', 'p4', '-cq', '21'] if hardware else ['-preset', 'fast', '-crf', '21']
                 args += ['-pix_fmt', 'yuv420p']
                 if speed_up and has_audio:
-                    args += ['-af', 'atempo=1.1']
+                    args += ['-af', 'asetpts=PTS-STARTPTS,atempo=1.1']
                 args += ['-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', str(partial)]
                 self.run(args, cwd=destination)
 
@@ -378,6 +396,27 @@ def validate_clips(clips, duration, minimum, maximum, strict=False):
                           'title': str(clip.get('title', 'Klip'))[:150],
                           'reason': str(clip.get('reason', ''))[:1000],
                           'hook_sentence': str(clip.get('hook_sentence', ''))[:500]})
+            if any(key in clip for key in ('hook_cut_start', 'hook_text', 'hook_alternatives',
+                                           'structure', 'loop', 'captions', 'montage', 'titles',
+                                           'description', 'hashtags', 'risks')):
+                try:
+                    cut = clip.get('hook_cut_start', 'brak')
+                    cut = float(cut) if str(cut).strip().lower() != 'brak' else 'brak'
+                    if isinstance(cut, float) and not start - .01 <= cut <= end + .01:
+                        cut = 'brak'
+                except (TypeError, ValueError):
+                    cut = 'brak'
+                row = valid[-1]
+                row.update({'hook_cut_start': cut, 'hook_text': str(clip.get('hook_text', 'brak'))[:300],
+                    'hook_alternatives': [str(x)[:120] for x in clip.get('hook_alternatives', [])[:2]],
+                    'structure': str(clip.get('structure', 'brak'))[:500],
+                    'loop': str(clip.get('loop', 'brak'))[:500],
+                    'captions': [str(x)[:160] for x in clip.get('captions', [])[:12]],
+                    'montage': str(clip.get('montage', 'brak'))[:1000],
+                    'titles': [str(x)[:60] for x in clip.get('titles', [])[:3]],
+                    'description': str(clip.get('description', 'brak'))[:500],
+                    'hashtags': [str(x)[:40] for x in clip.get('hashtags', [])[:5]],
+                    'risks': str(clip.get('risks', 'brak'))[:500]})
         except (KeyError, ValueError, TypeError, OverflowError):
             if strict:
                 raise ValueError('Niepoprawne czasy klipu. Sprawdź początek i koniec.') from None

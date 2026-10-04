@@ -1,12 +1,385 @@
 {
-  "name": "Clipfarm Apple-inspired studio",
-  "platform": "windows-desktop",
-  "colors": {
-    "background": "#f5f5f7", "surface": "#ffffff", "text": "#1d1d1f",
-    "secondaryText": "#63636e", "action": "#0071e3",
-    "mutedControl": "#e9e9ef", "disabledControl": "#e7e7ed"
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-04T05:05:48.002Z",
+  "title": "Design System: CLIPFARM",
+  "extensions": {
+    "colorMeta": {
+      "background": {
+        "role": "neutral",
+        "displayName": "background",
+        "tonalRamp": [
+          "oklch(15% 0.0140 258.36)",
+          "oklch(25% 0.0140 258.36)",
+          "oklch(35% 0.0140 258.36)",
+          "oklch(45% 0.0140 258.36)",
+          "oklch(55% 0.0140 258.36)",
+          "oklch(65% 0.0140 258.36)",
+          "oklch(80% 0.0140 258.36)",
+          "oklch(95% 0.0140 258.36)"
+        ]
+      },
+      "sidebar": {
+        "role": "neutral",
+        "displayName": "sidebar",
+        "tonalRamp": [
+          "oklch(15% 0.0184 255.73)",
+          "oklch(25% 0.0184 255.73)",
+          "oklch(35% 0.0184 255.73)",
+          "oklch(45% 0.0184 255.73)",
+          "oklch(55% 0.0184 255.73)",
+          "oklch(65% 0.0184 255.73)",
+          "oklch(80% 0.0184 255.73)",
+          "oklch(95% 0.0184 255.73)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "surface",
+        "tonalRamp": [
+          "oklch(15% 0.0247 253.75)",
+          "oklch(25% 0.0247 253.75)",
+          "oklch(35% 0.0247 253.75)",
+          "oklch(45% 0.0247 253.75)",
+          "oklch(55% 0.0247 253.75)",
+          "oklch(65% 0.0247 253.75)",
+          "oklch(80% 0.0247 253.75)",
+          "oklch(95% 0.0247 253.75)"
+        ]
+      },
+      "raised": {
+        "role": "neutral",
+        "displayName": "raised",
+        "tonalRamp": [
+          "oklch(15% 0.0303 246.97)",
+          "oklch(25% 0.0303 246.97)",
+          "oklch(35% 0.0303 246.97)",
+          "oklch(45% 0.0303 246.97)",
+          "oklch(55% 0.0303 246.97)",
+          "oklch(65% 0.0303 246.97)",
+          "oklch(80% 0.0303 246.97)",
+          "oklch(95% 0.0303 246.97)"
+        ]
+      },
+      "hover": {
+        "role": "neutral",
+        "displayName": "hover",
+        "tonalRamp": [
+          "oklch(15% 0.0358 247.37)",
+          "oklch(25% 0.0358 247.37)",
+          "oklch(35% 0.0358 247.37)",
+          "oklch(45% 0.0358 247.37)",
+          "oklch(55% 0.0358 247.37)",
+          "oklch(65% 0.0358 247.37)",
+          "oklch(80% 0.0358 247.37)",
+          "oklch(95% 0.0358 247.37)"
+        ]
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "border",
+        "tonalRamp": [
+          "oklch(15% 0.0366 248.84)",
+          "oklch(25% 0.0366 248.84)",
+          "oklch(35% 0.0366 248.84)",
+          "oklch(45% 0.0366 248.84)",
+          "oklch(55% 0.0366 248.84)",
+          "oklch(65% 0.0366 248.84)",
+          "oklch(80% 0.0366 248.84)",
+          "oklch(95% 0.0366 248.84)"
+        ]
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "text",
+        "tonalRamp": [
+          "oklch(15% 0.0059 239.82)",
+          "oklch(25% 0.0059 239.82)",
+          "oklch(35% 0.0059 239.82)",
+          "oklch(45% 0.0059 239.82)",
+          "oklch(55% 0.0059 239.82)",
+          "oklch(65% 0.0059 239.82)",
+          "oklch(80% 0.0059 239.82)",
+          "oklch(95% 0.0059 239.82)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "muted",
+        "tonalRamp": [
+          "oklch(15% 0.0290 248.20)",
+          "oklch(25% 0.0290 248.20)",
+          "oklch(35% 0.0290 248.20)",
+          "oklch(45% 0.0290 248.20)",
+          "oklch(55% 0.0290 248.20)",
+          "oklch(65% 0.0290 248.20)",
+          "oklch(80% 0.0290 248.20)",
+          "oklch(95% 0.0290 248.20)"
+        ]
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "accent",
+        "tonalRamp": [
+          "oklch(15% 0.1933 256.16)",
+          "oklch(25% 0.1933 256.16)",
+          "oklch(35% 0.1933 256.16)",
+          "oklch(45% 0.1933 256.16)",
+          "oklch(55% 0.1933 256.16)",
+          "oklch(65% 0.1933 256.16)",
+          "oklch(80% 0.1933 256.16)",
+          "oklch(95% 0.1933 256.16)"
+        ]
+      },
+      "accent-hover": {
+        "role": "primary",
+        "displayName": "accent hover",
+        "tonalRamp": [
+          "oklch(15% 0.1924 254.23)",
+          "oklch(25% 0.1924 254.23)",
+          "oklch(35% 0.1924 254.23)",
+          "oklch(45% 0.1924 254.23)",
+          "oklch(55% 0.1924 254.23)",
+          "oklch(65% 0.1924 254.23)",
+          "oklch(80% 0.1924 254.23)",
+          "oklch(95% 0.1924 254.23)"
+        ]
+      },
+      "teal": {
+        "role": "secondary",
+        "displayName": "teal",
+        "tonalRamp": [
+          "oklch(15% 0.1170 183.43)",
+          "oklch(25% 0.1170 183.43)",
+          "oklch(35% 0.1170 183.43)",
+          "oklch(45% 0.1170 183.43)",
+          "oklch(55% 0.1170 183.43)",
+          "oklch(65% 0.1170 183.43)",
+          "oklch(80% 0.1170 183.43)",
+          "oklch(95% 0.1170 183.43)"
+        ]
+      },
+      "green": {
+        "role": "secondary",
+        "displayName": "green",
+        "tonalRamp": [
+          "oklch(15% 0.1589 126.85)",
+          "oklch(25% 0.1589 126.85)",
+          "oklch(35% 0.1589 126.85)",
+          "oklch(45% 0.1589 126.85)",
+          "oklch(55% 0.1589 126.85)",
+          "oklch(65% 0.1589 126.85)",
+          "oklch(80% 0.1589 126.85)",
+          "oklch(95% 0.1589 126.85)"
+        ]
+      },
+      "orange": {
+        "role": "tertiary",
+        "displayName": "orange",
+        "tonalRamp": [
+          "oklch(15% 0.1746 61.06)",
+          "oklch(25% 0.1746 61.06)",
+          "oklch(35% 0.1746 61.06)",
+          "oklch(45% 0.1746 61.06)",
+          "oklch(55% 0.1746 61.06)",
+          "oklch(65% 0.1746 61.06)",
+          "oklch(80% 0.1746 61.06)",
+          "oklch(95% 0.1746 61.06)"
+        ]
+      },
+      "danger": {
+        "role": "neutral",
+        "displayName": "danger",
+        "tonalRamp": [
+          "oklch(15% 0.1361 22.88)",
+          "oklch(25% 0.1361 22.88)",
+          "oklch(35% 0.1361 22.88)",
+          "oklch(45% 0.1361 22.88)",
+          "oklch(55% 0.1361 22.88)",
+          "oklch(65% 0.1361 22.88)",
+          "oklch(80% 0.1361 22.88)",
+          "oklch(95% 0.1361 22.88)"
+        ]
+      },
+      "focus": {
+        "role": "neutral",
+        "displayName": "focus",
+        "tonalRamp": [
+          "oklch(15% 0.1346 247.54)",
+          "oklch(25% 0.1346 247.54)",
+          "oklch(35% 0.1346 247.54)",
+          "oklch(45% 0.1346 247.54)",
+          "oklch(55% 0.1346 247.54)",
+          "oklch(65% 0.1346 247.54)",
+          "oklch(80% 0.1346 247.54)",
+          "oklch(95% 0.1346 247.54)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Workspace headline",
+        "purpose": "Main workspace introduction."
+      },
+      "log": {
+        "displayName": "Task log",
+        "purpose": "Selectable processing diagnostics."
+      }
+    },
+    "shadows": [
+      {
+        "name": "video-card",
+        "value": "Qt MultiEffect shadowColor #30000000; shadowBlur 0.3; shadowVerticalOffset 3",
+        "purpose": "Source media card."
+      },
+      {
+        "name": "clip-card",
+        "value": "Qt MultiEffect shadowColor #28000000; shadowBlur 0.2; shadowVerticalOffset 3",
+        "purpose": "Clip result rows."
+      }
+    ],
+    "motion": [
+      {
+        "name": "fast",
+        "value": "160ms; 0ms with reduced motion",
+        "purpose": "Color, focus, opacity, button press."
+      },
+      {
+        "name": "normal",
+        "value": "240ms; 0ms with reduced motion",
+        "purpose": "Panel slides, state reveals, switch and segment movement."
+      },
+      {
+        "name": "slow",
+        "value": "300ms; 0ms with reduced motion",
+        "purpose": "Available Theme token."
+      },
+      {
+        "name": "movement-ease",
+        "value": "Qt Easing.OutCubic",
+        "purpose": "Movement decelerates into place."
+      },
+      {
+        "name": "busy-loops",
+        "value": "950ms spinner; 1200/1300ms progress",
+        "purpose": "Disabled when backend.animationsEnabled is false."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "desktop-minimum",
+        "value": "1100 × 780px"
+      },
+      {
+        "name": "desktop-default",
+        "value": "1360 × 900px"
+      }
+    ],
+    "source": {
+      "theme": "qml/Theme.qml",
+      "font": "qt_app.py",
+      "platform": "PySide6 / QML native Windows",
+      "preview": "QtMultimedia",
+      "reducedMotion": "Windows SPI_GETCLIENTAREAANIMATION / backend.animationsEnabled",
+      "componentSamples": "HTML/CSS translations of native QML for the design panel; Qt rendering remains authoritative.",
+      "tonalRamps": "Synthesized OKLCH inspection ramps; not additional application palette tokens."
+    }
   },
-  "typography": {"family": "Segoe UI Variable", "sizes": [12, 13, 14, 16, 17, 20, 22, 23, 24, 32]},
-  "spacing": [4, 8, 12, 16, 18, 20, 24, 30],
-  "radii": [8, 10, 12, 14, 16, 18]
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The next substantive action.",
+      "html": "<button class=\"ds-button\">Eksportuj klipy</button>",
+      "css": ".ds-button { background:#0071e3; color:#f1f5f8; font:600 13px Inter,'Segoe UI',sans-serif; height:40px; padding:0 14px; border:1px solid transparent; border-radius:9px; transition:background 160ms,transform 160ms; } .ds-button:hover {background:#1687f8} .ds-button:focus-visible {outline:2px solid #62b5ff;outline-offset:0} .ds-button:active {background:#005dbd;transform:scale(.97)} .ds-button:disabled {opacity:.42} @media(prefers-reduced-motion:reduce){.ds-button{transition:none}.ds-button:active{transform:none}}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Project and supporting actions.",
+      "html": "<button class=\"ds-button\">Otwórz projekt</button>",
+      "css": ".ds-button { background:#19222d; color:#f1f5f8; font:600 13px Inter,'Segoe UI',sans-serif; height:40px; padding:0 14px; border:1px solid #314253; border-radius:9px; transition:background 160ms,transform 160ms; } .ds-button:hover {background:#2a3b4b} .ds-button:focus-visible {outline:2px solid #62b5ff;outline-offset:0} .ds-button:active {background:#22303d;transform:scale(.97)} .ds-button:disabled {opacity:.42} @media(prefers-reduced-motion:reduce){.ds-button{transition:none}.ds-button:active{transform:none}}"
+    },
+    {
+      "name": "Field",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "Editable settings and clip times.",
+      "html": "<input class=\"ds-field\" aria-label=\"Minimalna długość w sekundach\" value=\"30\">",
+      "css": ".ds-field {height:38px;padding:0 12px;border:1px solid #314253;border-radius:9px;background:#22303d;color:#f1f5f8;font:13px Inter,'Segoe UI',sans-serif;transition:border-color 160ms} .ds-field:hover{border-color:#a6b6c6} .ds-field:focus-visible{outline:2px solid #62b5ff;outline-offset:-2px} .ds-field::selection{background:#0071e3;color:white} .ds-field:disabled{opacity:.45} @media(prefers-reduced-motion:reduce){.ds-field{transition:none}}"
+    },
+    {
+      "name": "Mode Segments",
+      "kind": "nav",
+      "refersTo": "segment-track",
+      "description": "Mutually exclusive clip-generation modes.",
+      "html": "<nav class=\"ds-segments\" aria-label=\"Tryb tworzenia\"><button class=\"ds-selected\" aria-pressed=\"true\">AI klipy</button><button aria-pressed=\"false\">Film · minuty</button></nav>",
+      "css": ".ds-segments{display:flex;background:#22303d;border-radius:9px;padding:4px;height:32px;gap:0} .ds-segments button{flex:1;border:0;border-radius:6px;background:transparent;color:#a6b6c6;font:600 12px Inter,'Segoe UI',sans-serif;padding:0 12px;transition:background 160ms} .ds-segments .ds-selected{background:#0071e3;color:white} .ds-segments button:hover:not(.ds-selected){background:#2a3b4b} .ds-segments button:focus-visible{outline:1px solid #62b5ff} .ds-segments button:active{filter:brightness(.92)} @media(prefers-reduced-motion:reduce){.ds-segments button{transition:none}}"
+    },
+    {
+      "name": "Clip Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Real media clip, supporting reason, and duration.",
+      "html": "<article class=\"ds-card\" tabindex=\"0\"><strong>Najlepszy moment</strong><p>Fragment wybrany z Twojego filmu.</p><small>30.0 – 60.0 s · 30.0 s</small></article>",
+      "css": ".ds-card{padding:18px;border:1px solid #314253;border-radius:14px;background:#19222d;color:#f1f5f8;font:13px Inter,'Segoe UI',sans-serif;transition:background 160ms,transform 240ms} .ds-card strong{font-size:16px;font-weight:600} .ds-card p{font-size:12px;color:#a6b6c6} .ds-card small{font-size:11px;color:#a6b6c6} .ds-card:hover{background:#22303d;border-color:#486174;transform:translateY(-2px)} .ds-card:focus-visible{outline:2px solid #62b5ff} @media(prefers-reduced-motion:reduce){.ds-card{transition:none}.ds-card:hover{transform:none}}"
+    },
+    {
+      "name": "Score Badge",
+      "kind": "chip",
+      "description": "Positive clip score; informational.",
+      "html": "<span class=\"ds-score\">8/10</span>",
+      "css": ".ds-score{display:inline-flex;align-items:center;justify-content:center;width:62px;height:27px;background:#154034;color:#b8eaa4;border-radius:7px;font:600 12px Inter,'Segoe UI',sans-serif}"
+    },
+    {
+      "name": "Export Switch",
+      "kind": "custom",
+      "description": "Native switch translation for optional export processing.",
+      "html": "<label class=\"ds-switch\"><input type=\"checkbox\" checked><span></span>Napisy słowo po słowie</label>",
+      "css": ".ds-switch{display:flex;align-items:center;gap:12px;color:#f1f5f8;font:13px Inter,'Segoe UI',sans-serif;position:relative}.ds-switch input{position:absolute;opacity:0;width:38px;height:22px}.ds-switch span{display:block;width:38px;height:22px;border-radius:11px;background:#314253;position:relative}.ds-switch span::after{content:'';position:absolute;width:16px;height:16px;left:3px;top:3px;border-radius:8px;background:white;transition:left 240ms}.ds-switch input:checked+span{background:#0071e3}.ds-switch input:checked+span::after{left:19px}.ds-switch input:focus-visible+span{outline:1px solid #62b5ff}.ds-switch:hover input:not(:checked)+span{background:#2a3b4b} @media(prefers-reduced-motion:reduce){.ds-switch span::after{transition:none}}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Operate — the desktop clip studio",
+    "overview": "CLIPFARM is a calm, dark Windows workbench for making clips from real local media. Settings occupy a stable left rail; video and resulting clips own the main workspace. Polish comes from legible hierarchy, tonal surfaces, a restrained blue action accent, and small transitions that explain changes.\n\nThe supplied CLIPFARM artwork remains the identity authority. Use the actual mark from assets in the header and empty states, and locally decoded media thumbnails once a film exists. The user requested this PySide6 / QML world to replace the former light CustomTkinter interface. The existing Python media, Whisper transcription, selection, export, and project workflow remains connected.",
+    "keyCharacteristics": [
+      "Dark, focused Windows desktop workspace.",
+      "Real media, original logo, and clear action hierarchy.",
+      "Independent settings and results scrolling.",
+      "Short state transitions with a complete reduced-motion path."
+    ],
+    "rules": [
+      {
+        "name": "The Action Rule",
+        "body": "Use blue for actions and selections; retain green, teal, and orange for their established semantic or brand roles.",
+        "section": "colors"
+      },
+      {
+        "name": "The Legibility Rule",
+        "body": "Wrap explanatory copy; truncate filenames and compact status only where the layout provides their full context elsewhere.",
+        "section": "typography"
+      },
+      {
+        "name": "The Quiet Depth Rule",
+        "body": "Keep shadows local to media cards; use surface contrast, borders, and a dimmed backdrop to establish hierarchy elsewhere.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do retain the supplied logo and actual media thumbnails.",
+      "Do use Theme as token source and preserve the blue action accent.",
+      "Do keep settings and results independently scrollable.",
+      "Do confine focus to open panels and restore it on close.",
+      "Do honor Windows reduced motion for transitions and continuous indicators.",
+      "Do preserve the existing media, transcription, selection, export, and project workflow."
+    ],
+    "donts": [
+      "Don't reintroduce the former light CustomTkinter visual world.",
+      "Don't substitute stock video, a drawn logo, or decorative imagery for real media and identity assets.",
+      "Don't make unavailable actions look enabled.",
+      "Don't use the video-caption font for desktop controls.",
+      "Don't add motion that bypasses backend.animationsEnabled."
+    ]
+  }
 }

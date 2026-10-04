@@ -28,3 +28,10 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+# Kick playback API compatibility
+
+The new public Kick playback endpoint and request schema were identified from
+yt-dlp's proposed Kick extractor rework (Unlicense), with metadata handling
+implemented locally in CLIPFARM from the actual player-session response:
+https://github.com/yt-dlp/yt-dlp/pull/17322

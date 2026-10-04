@@ -14,6 +14,8 @@ Wybór momentów nadal opiera się na transkrypcji.
 Transkrypcję można utworzyć osobno, pobrać do SRT / JSON i dołączyć do filmu (SRT / VTT / JSON).
 Gotowe transkrypcje i napisy leżące obok filmu są wczytywane i zapamiętywane.
 Zmiana kadrowania nie wymaga ponownej transkrypcji ani wyboru momentów przez Codex.
+Liczba klipów nie jest pytaniem dla użytkownika: aplikacja dobiera ją automatycznie
+do długości filmu i zakresu 30–60 sekund.
 
 Napisy w klipach: frazy do 4 słów, czcionka Anton. Tryb całego obrazu umieszcza tekst
 na czarnym pasie pod filmem. Nowe transkrypcje mają czasy słów; starsze można użyć
@@ -22,4 +24,5 @@ aktualne słowo jest żółte, a wcześniej wypowiedziane zostają białe. Dopas
 zapamiętywane i nie wywołuje Codexa ani nie tworzy tekstu transkrypcji od nowa.
 
 ## Platform
-Windows desktop, Python / CustomTkinter. Dobór stosu jest decyzją implementacyjną.
+Windows desktop, Python 3.11+ / PySide6 + QML (Qt Quick).
+Logika mediów pozostaje w Pythonie; interfejs komunikuje się z backendem QObject.

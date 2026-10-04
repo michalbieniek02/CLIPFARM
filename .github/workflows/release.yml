@@ -1,0 +1,59 @@
+name: Windows release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: windows-release-main
+  cancel-in-progress: true
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    env:
+      PYTHONIOENCODING: utf-8
+      QT_QPA_PLATFORM: offscreen
+      QT_QUICK_BACKEND: software
+      CLIPFARM_VERSION: build-${{ github.run_number }}
+      CLIPFARM_COMMIT: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install CPU test dependencies
+        shell: pwsh
+        run: |
+          $clipfarmCiRequirements = Join-Path $env:RUNNER_TEMP 'clipfarm-ci-requirements.txt'
+          Get-Content requirements.txt | Where-Object { $_ -notmatch '^nvidia-' } | Set-Content -LiteralPath $clipfarmCiRequirements -Encoding utf8
+          python -m pip install -r $clipfarmCiRequirements
+          if ($LASTEXITCODE -ne 0) { throw 'Dependency installation failed' }
+      - name: Check downloader, updates and native UI
+        shell: pwsh
+        run: |
+          $clipfarmChecks = @('tests/kick_api_review.py', 'tests/download_progress_review.py', 'tests/vod_review.py', 'tests/update_review.py', 'tests/update_restart_review.py', 'tests/ci_smoke.py')
+          foreach ($clipfarmCheck in $clipfarmChecks) {
+            python $clipfarmCheck
+            if ($LASTEXITCODE -ne 0) { throw "Check failed: $clipfarmCheck" }
+          }
+      - name: Build verified update package
+        run: |
+          python release_tools.py --version $env:CLIPFARM_VERSION --commit $env:CLIPFARM_COMMIT
+          if ($LASTEXITCODE -ne 0) { throw 'Package build failed' }
+      - name: Publish completed release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create $env:CLIPFARM_VERSION dist/clipfarm-windows.zip dist/clipfarm-update.json --target $env:CLIPFARM_COMMIT --title "CLIPFARM $env:CLIPFARM_VERSION" --generate-notes --draft
+          if ($LASTEXITCODE -ne 0) { throw 'Release upload failed' }
+          gh release edit $env:CLIPFARM_VERSION --draft=false --latest
+          if ($LASTEXITCODE -ne 0) { throw 'Release publication failed' }

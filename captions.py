@@ -4,6 +4,14 @@ import re
 from PIL import ImageFont
 
 FONT_DIR = Path(__file__).resolve().parent / 'assets' / 'fonts'
+FONT_SIZE = 84  # 20% larger than the previous 70px default at 1080px width.
+
+
+def retime_cues(cues, speed):
+    """Map clip-relative caption and word timestamps to the exported playback rate."""
+    return [{**cue, 'start': cue['start'] / speed, 'end': cue['end'] / speed,
+             'words': [{**word, 'start': word['start'] / speed, 'end': word['end'] / speed}
+                       for word in cue.get('words', [])]} for cue in cues]
 
 
 def phrases(segments, start, end):
@@ -92,7 +100,7 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Short,Anton,70,&H00FFFFFF,&H00FFFFFF,&H00000000,&H80000000,0,0,0,0,100,100,0,0,1,3,1,5,40,40,40,1
+Style: Short,Anton,{FONT_SIZE},&H00FFFFFF,&H00FFFFFF,&H00000000,&H80000000,0,0,0,0,100,100,0,0,1,3,1,5,40,40,40,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -102,7 +110,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         def safe(text):
             return text.upper().replace('\\', '').replace('{', '(').replace('}', ')')
         text = safe(cue['text'])
-        size = max(12, round(width * 70 / 1080))
+        size = max(12, round(width * FONT_SIZE / 1080))
         while size > 12 and ImageFont.truetype(str(FONT_DIR / 'Anton-Regular.ttf'), size).getlength(text) > width * .84:
             size -= 1
         tag = f'{{\\an5\\pos({width / 2:.0f},{y:.0f})\\fs{size}}}'

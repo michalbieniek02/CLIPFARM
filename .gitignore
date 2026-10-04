@@ -13,3 +13,5 @@ checks/
 *.lnk
 *.pyc
 *.pyo
+dist/
+version.json
