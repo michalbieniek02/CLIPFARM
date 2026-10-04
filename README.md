@@ -10,6 +10,37 @@ Kliknij dwukrotnie **CLIPFARM.exe**. Launcher otwiera aplikację bez konsoli.
 Alternatywy: **CLIPFARM.vbs** albo `powershell -ExecutionPolicy Bypass -File Start-CLIPFARM.ps1`.
 Folder `runtime` musi pozostać obok launchera. To instalacja lokalna, a nie przenośny pojedynczy EXE.
 
+## Instalacja ze świeżego repozytorium
+
+Na Windows zainstaluj Python 3.12 oraz **Codex CLI albo Claude Code**. Sklonuj repozytorium i otwórz PowerShell
+w jego folderze, na przykład:
+
+```powershell
+git clone <adres-repozytorium> CLIPFARM
+cd CLIPFARM
+powershell -ExecutionPolicy Bypass -File .\Install-CLIPFARM.ps1
+codex login                 # jeśli używasz Codex CLI
+# albo:
+npm install -g @anthropic-ai/claude-code
+claude                       # dokończ logowanie w terminalu
+```
+
+Instalator tworzy lokalne środowisko `runtime` i pobiera biblioteki. Potem uruchom:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\Start-CLIPFARM.ps1
+```
+
+Przy kolejnych uruchomieniach wystarczy dwuklik `CLIPFARM.exe` albo `CLIPFARM.vbs`.
+Nie przenoś samego pliku EXE — musi mieć obok `app.py`, `assets`, `models` i `runtime`.
+Jeśli PowerShell zgłosi brak Pythona, zainstaluj Python 3.12 z opcją „Add python.exe to PATH”,
+zamknij i otwórz PowerShell ponownie, a następnie uruchom instalator jeszcze raz.
+
+CLIPFARM wykrywa dostawcę automatycznie: najpierw sprawdza Codex CLI, a jeśli nie może
+z niego skorzystać, przechodzi do Claude Code. Na komputerze z oboma narzędziami Codex
+ma pierwszeństwo. Użytkownik Claude nie musi instalować Codexa — wystarczy `claude`,
+jednorazowe logowanie w terminalu i później zwykły start aplikacji.
+
 1. Przeciągnij film z Eksploratora Windows na pole „Zacznij od filmu” albo kliknij „Dodaj film”.
 2. Domyślne ustawienia: pięć propozycji, długość 30–60 s, pionowy obraz 9:16,
    cały film z czarnymi pasami i napisy w obrazie.
@@ -17,6 +48,11 @@ Folder `runtime` musi pozostać obok launchera. To instalacja lokalna, a nie prz
    Codex CLI wysyła tekst do GPT 6.1 Sol i zwraca tytuły, czasy i uzasadnienia.
 4. Popraw czasy w sekundach i obejrzyj fragment w systemowym odtwarzaczu.
 5. Zaznacz klipy i kliknij „Eksportuj zaznaczone”. Wybierz folder docelowy.
+
+Obok trybu AI dostępny jest tryb „Film · minuty”. Dzieli cały materiał na kolejne
+60-sekundowe części (ostatnia może być krótsza), bez wybierania momentów przez model.
+Przed napisami można włączyć dodatki eksportu: lekki kolor, tempo 1,1× i odbicie lustrzane.
+Ustawienia zapisują się razem z projektem, a napisy są globalnie większe o 2 punkty.
 
 Każdy eksport zawiera MP4, osobny SRT i manifest `clips.json`.
 Projekty można zapisać do JSON i wczytać ponownie. Film źródłowy musi nadal istnieć.
@@ -53,11 +89,11 @@ Biblioteki NVIDIA zostały zainstalowane wewnątrz środowiska aplikacji, bez zm
 Przy niedostępnej akceleracji tryb automatyczny próbuje użyć CPU i informuje o tym w dzienniku.
 Pierwsze użycie innego modelu Whisper może pobrać go z Hugging Face.
 
-Aplikacja używa już zalogowanego **Codex CLI** i modelu `gpt-6.1-sol`.
-Nie wymaga klucza API. Wywołania korzystają z konta i limitów Codex.
-Przy problemie z logowaniem uruchom `codex login`; dostępność modelu zależy od konta.
-Nie zapisujemy ani nie kopiujemy tokenów logowania. Codex jest uruchamiany w trybie
-read-only, z JSON Schema odpowiedzi, bez trwałego zapisywania sesji.
+Aplikacja automatycznie wykrywa zalogowane narzędzie AI. Jeśli istnieje Codex CLI,
+używa jego konta i GPT 6.1 Sol. Jeśli Codex nie jest dostępny, a istnieje Claude Code,
+używa jego aktywnej sesji i domyślnego modelu Claude. Nie ma przełącznika dostawcy
+ani klucza API. Przy problemie z logowaniem uruchom `codex login` albo `claude`.
+Tokeny logowania zostają w ich własnych aplikacjach; CLIPFARM ich nie kopiuje.
 
 Film oraz dźwięk pozostają na komputerze. Do modelu trafia transkrypcja i opis wyboru.
 W długich filmach analizowane są wszystkie części transkrypcji; podział ma nakładkę,

@@ -63,46 +63,66 @@ class StudioUI:
         settings.grid(row=2, column=0, sticky='ew')
         settings.columnconfigure(0, weight=1)
         self.label(settings, 'Liczba klipów', 14, weight='bold').grid(row=0, column=0, sticky='w', padx=18, pady=(18, 8))
+        self.mode = ctk.CTkSegmentedButton(settings, values=['AI klipy', 'Film · minuty'],
+            command=lambda value: self.update_mode_info(), height=34, font=(FONT, 12), corner_radius=9,
+            fg_color=SOFT, selected_color='white', selected_hover_color='#fafaff',
+            unselected_color=SOFT, unselected_hover_color='#dddde5', text_color=TEXT)
+        self.mode.set('AI klipy')
+        self.mode.grid(row=1, column=0, padx=18, pady=(0, 10), sticky='ew')
+        self.controls.append(self.mode)
         stepper = ctk.CTkFrame(settings, fg_color='#f0f0f5', corner_radius=10)
-        stepper.grid(row=1, column=0, sticky='ew', padx=18, pady=(0, 16))
+        stepper.grid(row=2, column=0, sticky='ew', padx=18, pady=(0, 16))
         stepper.columnconfigure(1, weight=1)
         self.button(stepper, '−', lambda: self.step_count(-1), width=40, height=38).grid(row=0, column=0)
         self.count = self.entry(stepper, '5', width=90)
         self.count.grid(row=0, column=1, sticky='ew')
         self.button(stepper, '+', lambda: self.step_count(1), width=40, height=38).grid(row=0, column=2)
-        self.label(settings, 'Długość klipu', 14, weight='bold').grid(row=2, column=0, sticky='w', padx=18, pady=(0, 8))
+        self.label(settings, 'Długość klipu', 14, weight='bold').grid(row=3, column=0, sticky='w', padx=18, pady=(0, 8))
         times = ctk.CTkFrame(settings, fg_color='transparent')
-        times.grid(row=3, column=0, padx=18, sticky='ew', pady=(0, 4))
+        times.grid(row=4, column=0, padx=18, sticky='ew', pady=(0, 4))
         times.columnconfigure((0, 2), weight=1)
         self.minimum, self.maximum = self.entry(times, '30'), self.entry(times, '60')
         self.minimum.grid(row=0, column=0, sticky='ew')
         self.label(times, '–', muted=True).grid(row=0, column=1, padx=8)
         self.maximum.grid(row=0, column=2, sticky='ew')
-        self.label(settings, 'sekund · minimum i maksimum', 12, True).grid(row=4, column=0, padx=18, pady=(0, 18), sticky='w')
-        self.label(settings, 'Format obrazu', 14, weight='bold').grid(row=5, column=0, padx=18, sticky='w', pady=(0, 8))
+        self.label(settings, 'sekund · minimum i maksimum', 12, True).grid(row=5, column=0, padx=18, pady=(0, 18), sticky='w')
+        self.mode_hint = self.label(settings, 'AI wybierze najlepsze momenty z transkrypcji.', 12, True, wraplength=215, justify='left')
+        self.mode_hint.grid(row=6, column=0, padx=18, pady=(0, 16), sticky='w')
+        self.label(settings, 'Format obrazu', 14, weight='bold').grid(row=7, column=0, padx=18, sticky='w', pady=(0, 8))
         self.format = ctk.CTkSegmentedButton(settings, values=['Pionowy 9:16', 'Oryginalny'],
             command=lambda value: self.update_framing_info(),
             height=38, font=(FONT, 12), corner_radius=9, fg_color=SOFT,
             selected_color='white', selected_hover_color='#fafaff',
             unselected_color=SOFT, unselected_hover_color='#dddde5', text_color=TEXT)
         self.format.set('Pionowy 9:16')
-        self.format.grid(row=6, column=0, padx=18, pady=(0, 18), sticky='ew')
+        self.format.grid(row=8, column=0, padx=18, pady=(0, 18), sticky='ew')
         self.controls.append(self.format)
-        self.label(settings, 'Kadrowanie pionowe', 14, weight='bold').grid(row=7, column=0, padx=18, sticky='w', pady=(0, 8))
+        self.label(settings, 'Kadrowanie pionowe', 14, weight='bold').grid(row=9, column=0, padx=18, sticky='w', pady=(0, 8))
         self.cropping = ctk.CTkOptionMenu(settings, values=list(FRAMING_LABELS),
             command=lambda value: self.update_framing_info(), height=38, corner_radius=10,
             fg_color=SOFT, button_color=SOFT, button_hover_color='#dddde5', text_color=TEXT,
             font=(FONT, 12), dropdown_fg_color=PANEL, dropdown_text_color=TEXT, dropdown_hover_color=SOFT)
         self.cropping.set('Cały obraz · czarne pasy')
-        self.cropping.grid(row=8, column=0, padx=18, sticky='ew')
+        self.cropping.grid(row=10, column=0, padx=18, sticky='ew')
         self.controls.append(self.cropping)
         self.framing_hint = self.label(settings, FRAMING_HELP['fit'], 12, True, wraplength=215, justify='left')
-        self.framing_hint.grid(row=9, column=0, padx=18, sticky='w', pady=(6, 16))
+        self.framing_hint.grid(row=11, column=0, padx=18, sticky='w', pady=(6, 16))
+        self.label(settings, 'Dodatki eksportu', 14, weight='bold').grid(row=12, column=0, padx=18, sticky='w', pady=(0, 8))
+        self.light_color = ctk.CTkSwitch(settings, text='Lekki kolor', font=(FONT, 13), progress_color=ACCENT,
+            button_color='white', button_hover_color='#f6f6fb', fg_color='#d8d8df', text_color=TEXT, switch_width=42, switch_height=24)
+        self.light_color.grid(row=13, column=0, padx=18, pady=2, sticky='w')
+        self.speed_up = ctk.CTkSwitch(settings, text='Tempo 1,1×', font=(FONT, 13), progress_color=ACCENT,
+            button_color='white', button_hover_color='#f6f6fb', fg_color='#d8d8df', text_color=TEXT, switch_width=42, switch_height=24)
+        self.speed_up.grid(row=14, column=0, padx=18, pady=2, sticky='w')
+        self.mirror = ctk.CTkSwitch(settings, text='Odbicie lustrzane', font=(FONT, 13), progress_color=ACCENT,
+            button_color='white', button_hover_color='#f6f6fb', fg_color='#d8d8df', text_color=TEXT, switch_width=42, switch_height=24)
+        self.mirror.grid(row=15, column=0, padx=18, pady=(2, 10), sticky='w')
+        self.controls.extend((self.light_color, self.speed_up, self.mirror))
         self.burn = ctk.CTkSwitch(settings, text='Napisy słowo po słowie', font=(FONT, 14),
             progress_color=ACCENT, button_color='white', button_hover_color='#f6f6fb',
             fg_color='#d8d8df', text_color=TEXT, switch_width=42, switch_height=24)
         self.burn.select()
-        self.burn.grid(row=10, column=0, padx=18, pady=(2, 18), sticky='w')
+        self.burn.grid(row=16, column=0, padx=18, pady=(2, 18), sticky='w')
         self.controls.append(self.burn)
 
         self.label(side, 'Wybierz charakter', 17, weight='bold').grid(row=3, column=0, padx=8, sticky='w', pady=(22, 8))
@@ -199,6 +219,7 @@ class StudioUI:
         self.logs.grid(row=8, column=0, sticky='ew', pady=(8, 0))
         self.logs.grid_remove()
         self.render_clips()
+        self.update_mode_info()
         self.bind('<Control-o>', lambda event: self.choose_source() if self.pipeline is None else None)
         self.bind('<Control-s>', lambda event: self.save_project() if self.pipeline is None else None)
         self.bind('<Escape>', lambda event: self.cancel_task())
@@ -210,6 +231,11 @@ class StudioUI:
         else:
             self.logs.grid_remove()
         self.details_button.configure(text='Ukryj' if self.details_open else 'Szczegóły')
+
+    def update_mode_info(self):
+        film_mode = self.mode.get() == 'Film · minuty'
+        self.mode_hint.configure(text='Film zostanie podzielony na pełne minuty; ostatnia część może być krótsza.' if film_mode else 'AI wybierze najlepsze momenty z transkrypcji.')
+        self.analyze_button.configure(text='Podziel film' if film_mode else 'Znajdź fragmenty')
 
     def step_count(self, delta):
         try:

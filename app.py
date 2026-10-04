@@ -13,7 +13,7 @@ if os.name == 'nt':
     import ctypes
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('Clipfarm.Desktop')
 
-from engine import Pipeline, Cancelled, ROOT, validate_options, validate_clips
+from engine import Pipeline, Cancelled, ROOT, validate_options, validate_clips, minute_clips
 
 from ui_layout import StudioUI, BG
 from brand import ASSETS
@@ -236,8 +236,10 @@ class App(StudioUI, ctk.CTk, TkinterDnD.DnDWrapper):
                 return
         try:
             count, minimum, maximum = int(self.count.get()), float(self.minimum.get()), float(self.maximum.get())
-            validate_options(count, minimum, maximum)
-            if not self.metadata['audio'] and not self.segments:
+            film_mode = self.mode.get() == 'Film · minuty'
+            if not film_mode:
+                validate_options(count, minimum, maximum)
+            if not self.metadata['audio'] and not self.segments and (not film_mode or bool(self.burn.get())):
                 raise ValueError('Ten film nie ma dźwięku. Ta wersja wybiera fragmenty na podstawie mowy.')
         except ValueError as exc:
             messagebox.showerror('Sprawdź ustawienia', str(exc))
@@ -250,16 +252,19 @@ class App(StudioUI, ctk.CTk, TkinterDnD.DnDWrapper):
             if existing:
                 pipeline.log('Używam gotowej transkrypcji — bez ponownego rozpoznawania mowy.')
                 segments = existing
+            elif film_mode and not bool(self.burn.get()):
+                pipeline.log('Tryb Film · minuty: pomijam transkrypcję, bo napisy są wyłączone.')
+                segments = []
             else:
                 segments = pipeline.transcribe(source, work, size)
-            clips = pipeline.select(segments, duration, count, minimum, maximum, brief, work)
+            clips = minute_clips(duration) if film_mode else pipeline.select(segments, duration, count, minimum, maximum, brief, work)
             return segments, clips
         def complete(result):
             self.segments, self.clips = result
             self.transcript_origin = self.transcript_origin or 'Whisper lokalnie'
             self.render_clips()
             self.write_project(self.work / 'project.json')
-            self.status.configure(text=f'Znaleziono {len(self.clips)} fragmentów. Sprawdź czasy i wybierz klipy do eksportu.')
+            self.status.configure(text=f'Podzielono cały film na {len(self.clips)} części.' if film_mode else f'Znaleziono {len(self.clips)} fragmentów. Sprawdź czasy i wybierz klipy do eksportu.')
         self.task(operation, complete)
 
 
@@ -281,10 +286,12 @@ class App(StudioUI, ctk.CTk, TkinterDnD.DnDWrapper):
         folder = self.work / 'preview'
         vertical = self.format.get() == 'Pionowy 9:16'
         framing = self.framing_mode()
+        light_color, speed_up, mirror = bool(self.light_color.get()), bool(self.speed_up.get()), bool(self.mirror.get())
         burn = bool(self.burn.get())
         def render(p):
             files = p.export(self.source, [clip], self.segments, folder,
-                             vertical=vertical, burn=burn, framing=framing, timing_work=self.work)
+                             vertical=vertical, burn=burn, framing=framing, timing_work=self.work,
+                             light_color=light_color, speed_up=speed_up, mirror=mirror)
             return files, p.caption_segments
         def complete(result):
             files, self.segments = result
@@ -308,20 +315,24 @@ class App(StudioUI, ctk.CTk, TkinterDnD.DnDWrapper):
         self.destination = Path(folder)
         vertical, burn = self.format.get() == 'Pionowy 9:16', bool(self.burn.get())
         framing = self.framing_mode()
+        light_color, speed_up, mirror = bool(self.light_color.get()), bool(self.speed_up.get()), bool(self.mirror.get())
         def complete(result):
             files, self.segments = result
             self.status.configure(text=f'Zapisano {len(files)} klipów w {self.destination}.')
             os.startfile(str(self.destination))
         def render(p):
             files = p.export(self.source, clips, self.segments, folder, vertical, burn,
-                             framing=framing, timing_work=self.work)
+                             framing=framing, timing_work=self.work, light_color=light_color,
+                             speed_up=speed_up, mirror=mirror)
             return files, p.caption_segments
         self.task(render, complete)
 
     def write_project(self, path):
         clips = self.edited_clips() if self.rows else self.clips
         data = {'version': 2, 'source': str(self.source), 'segments': self.segments, 'clips': clips,
-                'settings': {'format': self.format.get(), 'framing': self.cropping.get(), 'burn': bool(self.burn.get())}}
+                'settings': {'format': self.format.get(), 'framing': self.cropping.get(), 'burn': bool(self.burn.get()),
+                             'mode': self.mode.get(), 'light_color': bool(self.light_color.get()),
+                             'speed_up': bool(self.speed_up.get()), 'mirror': bool(self.mirror.get())}}
         Path(path).write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding='utf-8')
 
     def save_project(self):
@@ -353,8 +364,14 @@ class App(StudioUI, ctk.CTk, TkinterDnD.DnDWrapper):
                     self.format.set(settings['format'])
                 if settings.get('framing') in self.cropping.cget('values'):
                     self.cropping.set(settings['framing'])
+                if settings.get('mode') in self.mode.cget('values'):
+                    self.mode.set(settings['mode'])
                 self.burn.select() if settings.get('burn', True) else self.burn.deselect()
+                self.light_color.select() if settings.get('light_color') else self.light_color.deselect()
+                self.speed_up.select() if settings.get('speed_up') else self.speed_up.deselect()
+                self.mirror.select() if settings.get('mirror') else self.mirror.deselect()
                 self.update_framing_info()
+                self.update_mode_info()
                 self.render_clips()
                 self.status.configure(text='Wczytano projekt. Możesz poprawić klipy i wyeksportować je ponownie.')
             except Exception as exc:

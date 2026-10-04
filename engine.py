@@ -151,21 +151,36 @@ class Pipeline:
     def model_request(self, prompt, work):
         self.check()
         codex = find_codex()
-        if not codex:
-            raise ValueError('Brak Codex CLI. Zainstaluj Codex CLI i zaloguj się poleceniem codex login.')
+        claude = find_claude()
+        if not codex and not claude:
+            raise ValueError('Nie znaleziono Codex CLI ani Claude Code. Zainstaluj jedno z nich i zaloguj konto.')
         work = Path(work)
         work.mkdir(parents=True, exist_ok=True)
         schema = work / 'selection-schema.json'
         schema.write_text(json.dumps(SCHEMA), encoding='utf-8')
         output = work / f'selection-{uuid.uuid4().hex}.json'
-        try:
-            self.run(codex + ['exec', '--ignore-user-config', '--ephemeral', '--skip-git-repo-check',
-                '--sandbox', 'read-only', '--model', MODEL, '--output-schema', str(schema),
-                '--output-last-message', str(output), '--color', 'never', '-'],
-                cwd=work, input_text=prompt, timeout=600)
-            return json.loads(output.read_text(encoding='utf-8'))
-        finally:
-            output.unlink(missing_ok=True)
+        errors = []
+        if codex:
+            try:
+                self.log('AI: znaleziono Codex CLI — używam zalogowanego konta.')
+                self.run(codex + ['exec', '--ignore-user-config', '--ephemeral', '--skip-git-repo-check',
+                    '--sandbox', 'read-only', '--model', MODEL, '--output-schema', str(schema),
+                    '--output-last-message', str(output), '--color', 'never', '-'],
+                    cwd=work, input_text=prompt, timeout=600)
+                return json.loads(output.read_text(encoding='utf-8'))
+            except (RuntimeError, OSError, ValueError) as exc:
+                errors.append(f'Codex: {exc}')
+            finally:
+                output.unlink(missing_ok=True)
+        if claude:
+            try:
+                self.log('AI: Codex niedostępny — znaleziono Claude Code, używam zalogowanego konta.')
+                raw, _ = self.run(claude + ['-p', prompt, '--output-format', 'json'],
+                                  cwd=work, timeout=600)
+                return parse_agent_json(raw)
+            except (RuntimeError, OSError, ValueError) as exc:
+                errors.append(f'Claude Code: {exc}')
+        raise ValueError('Nie udało się użyć zalogowanego AI. ' + ' | '.join(errors)[-1800:])
 
     def select(self, segments, duration, count, minimum, maximum, brief, work):
         validate_options(count, minimum, maximum)
@@ -185,7 +200,7 @@ class Pipeline:
             batches.append(batch)
         candidates = []
         for index, batch in enumerate(batches):
-            self.log(f'GPT 6.1 Sol: wybór fragmentów, część {index + 1}/{len(batches)}…')
+            self.log(f'AI: wybór fragmentów, część {index + 1}/{len(batches)}…')
             prompt = selection_prompt(batch, count, minimum, maximum, brief)
             data = self.model_request(prompt, work)
             valid = validate_clips(data.get('clips'), duration, minimum, maximum)
@@ -198,7 +213,8 @@ class Pipeline:
             raise ValueError('Model nie zwrócił poprawnych klipów. Zmień zakres długości lub opis wyboru.')
         return selected
 
-    def export(self, source, clips, segments, destination, vertical=True, burn=False, encoder='auto', framing='fit', timing_work=None):
+    def export(self, source, clips, segments, destination, vertical=True, burn=False, encoder='auto', framing='fit', timing_work=None,
+               light_color=False, speed_up=False, mirror=False):
         from framing import FIT_FILTER, CENTER_FILTER, face_filter
         from captions import phrases, placement, ass_text, progressive_cues, FONT_DIR
         if framing not in ('fit', 'center', 'face'):
@@ -206,6 +222,7 @@ class Pipeline:
         destination = Path(destination)
         destination.mkdir(parents=True, exist_ok=True)
         metadata = self.probe(source)
+        has_audio = bool(metadata.get('audio'))
         validate_clips(clips, metadata['duration'], 1, metadata['duration'], strict=True)
         if burn and segments:
             from word_timing import align_saved_text
@@ -238,6 +255,13 @@ class Pipeline:
                     filters.append(FIT_FILTER if framing == 'fit' else CENTER_FILTER)
             else:
                 filters.append('scale=trunc(iw/2)*2:trunc(ih/2)*2,setsar=1')
+            # Apply requested transforms before ASS subtitles so captions stay readable.
+            if light_color:
+                filters.append('eq=contrast=1.03:brightness=0.02:saturation=1.05')
+            if speed_up:
+                filters.append('setpts=PTS/1.1')
+            if mirror:
+                filters.append('hflip')
             if burn and subtitle:
                 width, height, y, reserved = placement(metadata['width'], metadata['height'],
                                                       vertical, filters[0] == FIT_FILTER)
@@ -253,7 +277,10 @@ class Pipeline:
                         '-t', str(clip['end'] - clip['start']), '-map', '0:v:0', '-map', '0:a:0?',
                         '-vf', ','.join(filters), '-c:v', 'h264_nvenc' if hardware else 'libx264']
                 args += ['-preset', 'p4', '-cq', '21'] if hardware else ['-preset', 'fast', '-crf', '21']
-                args += ['-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', str(partial)]
+                args += ['-pix_fmt', 'yuv420p']
+                if speed_up and has_audio:
+                    args += ['-af', 'atempo=1.1']
+                args += ['-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', str(partial)]
                 self.run(args, cwd=destination)
 
             self.log(f"Eksport {i + 1}/{len(clips)}: {clip['title']} ({'NVENC' if gpu else 'CPU'})")
@@ -273,8 +300,26 @@ class Pipeline:
                 partial.unlink(missing_ok=True)
                 command_file.unlink(missing_ok=True)
         (destination / 'clips.json').write_text(json.dumps({'source': str(source), 'clips': clips,
-            'files': written, 'vertical': vertical, 'framing': framing, 'burn': burn}, ensure_ascii=False, indent=2), encoding='utf-8')
+            'files': written, 'vertical': vertical, 'framing': framing, 'burn': burn,
+            'light_color': light_color, 'speed_up': speed_up, 'mirror': mirror}, ensure_ascii=False, indent=2), encoding='utf-8')
         return written
+
+
+def minute_clips(duration, seconds=60):
+    """Return contiguous source ranges covering the whole film."""
+    if not math.isfinite(duration) or duration <= 0 or seconds <= 0:
+        raise ValueError('Film musi mieć dodatnią długość.')
+    clips = []
+    start = 0.0
+    index = 1
+    while start < duration - .01:
+        end = min(duration, start + seconds)
+        clips.append({'start': round(start, 3), 'end': round(end, 3), 'score': 0,
+                      'title': f'Część {index:02d}', 'reason': 'Kolejna minuta filmu.',
+                      'hook_sentence': ''})
+        start = end
+        index += 1
+    return clips
 
 
 def find_codex():
@@ -288,6 +333,28 @@ def find_codex():
     script = base / 'bin/codex.js'
     node = shutil.which('node')
     return [node, str(script)] if node and script.exists() else None
+
+
+def find_claude():
+    """Find Claude Code without requiring an API key or a provider setting."""
+    found = shutil.which('claude.exe') or shutil.which('claude')
+    return [found] if found else None
+
+
+def parse_agent_json(raw):
+    """Claude Code can wrap its answer in a JSON result or a markdown fence."""
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        data = None
+    if isinstance(data, dict) and isinstance(data.get('result'), str):
+        raw = data['result']
+    if isinstance(data, dict) and 'clips' in data:
+        return data
+    match = re.search(r'\{\s*"clips"\s*:\s*\[.*\]\s*\}', raw, re.S)
+    if not match:
+        raise ValueError('Claude Code nie zwrócił poprawnego JSON klipów.')
+    return json.loads(match.group(0))
 
 
 def validate_options(count, minimum, maximum):
