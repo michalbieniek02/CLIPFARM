@@ -1,0 +1,12 @@
+{
+  "name": "Clipfarm Apple-inspired studio",
+  "platform": "windows-desktop",
+  "colors": {
+    "background": "#f5f5f7", "surface": "#ffffff", "text": "#1d1d1f",
+    "secondaryText": "#63636e", "action": "#0071e3",
+    "mutedControl": "#e9e9ef", "disabledControl": "#e7e7ed"
+  },
+  "typography": {"family": "Segoe UI Variable", "sizes": [12, 13, 14, 16, 17, 20, 22, 23, 24, 32]},
+  "spacing": [4, 8, 12, 16, 18, 20, 24, 30],
+  "radii": [8, 10, 12, 14, 16, 18]
+}

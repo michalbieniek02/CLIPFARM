@@ -1,0 +1,15 @@
+runtime/
+.venv/
+models/
+projects/
+exports/
+__pycache__/
+*.log
+tmp*/
+checks/
+.local/
+.env
+.env.*
+*.lnk
+*.pyc
+*.pyo
