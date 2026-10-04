@@ -1,6 +1,8 @@
 """Resume video downloads from Kick, Twitch, YouTube and X, with optional compression."""
 import hashlib
 from collections import deque
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from contextlib import nullcontext
 import json
 import math
 from pathlib import Path
@@ -55,10 +57,31 @@ class DownloadProgress:
         self.pipeline.log(f'VOD: {done:.1f} / {self.total:.1f} s · {self.quality}{pace} · zapisano {(self.saved_bytes + size) / 1e6:.1f} MB · {estimate}')
 
 
-def run_media(pipeline, args, progress, timeout=43200, stall_timeout=90):
+class PartsProgress:
+    """Combine concurrent and resumed pieces without counting retries twice."""
+    def __init__(self, pipeline, total, lengths, cached, quality):
+        self.lengths = lengths
+        self.media = {index: lengths[index] for index in cached}
+        self.sizes = dict(cached)
+        self.lock = threading.Lock()
+        self.progress = DownloadProgress(pipeline, total, 0, quality)
+
+    def update(self, index, media, size, speed='', force=False):
+        with self.lock:
+            self.media[index] = max(self.media.get(index, 0), min(self.lengths[index], media))
+            self.sizes[index] = max(self.sizes.get(index, 0), size)
+            if force:
+                self.progress.last_log = -math.inf
+            self.progress(sum(self.media.values()), sum(self.sizes.values()), speed)
+
+def run_media(pipeline, args, progress, timeout=43200, stall_timeout=90, abort=None):
     """Stream FFmpeg progress without blocking cancellation or filling its pipes."""
-    from engine import HIDDEN
-    pipeline.check()
+    from engine import HIDDEN, Cancelled
+    def check():
+        pipeline.check()
+        if abort is not None and abort.is_set():
+            raise Cancelled('Zatrzymano pozostałe części pobierania.')
+    check()
     command = [args[0], '-progress', 'pipe:1', '-nostats', '-stats_period', '0.25', *args[1:]]
     proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                             stdin=subprocess.DEVNULL, text=True, encoding='utf-8', errors='replace',
@@ -80,7 +103,7 @@ def run_media(pipeline, args, progress, timeout=43200, stall_timeout=90):
     record = {}
     try:
         while True:
-            pipeline.check()
+            check()
             now = time.monotonic()
             if now - started > timeout:
                 raise RuntimeError('Przekroczono czas pobierania tej części.')
@@ -241,13 +264,27 @@ def transcode_args(ffmpeg, info, start, length, output, gpu, quality='480p30'):
     return args
 
 
-def download_original(pipeline, info, cache, output, start, end, duration):
+def matches_profile(info, quality):
+    """A known compatible source already meets the size, FPS and bitrate profile."""
+    profile = QUALITIES[quality]
+    if not profile or info.get('requested_formats'):
+        return False
+    height, fps, bitrate, audio = profile
+    return (isinstance(info.get('height'), (int, float)) and 0 < info['height'] <= height
+            and isinstance(info.get('fps'), (int, float)) and abs(info['fps'] - fps) < .05
+            and isinstance(info.get('tbr'), (int, float)) and 0 < info['tbr'] <= (bitrate + audio) * 1.10
+            and str(info.get('vcodec', '')).startswith(('h264', 'avc1'))
+            and str(info.get('acodec', '')).startswith(('aac', 'mp4a')))
+
+
+def download_original(pipeline, info, cache, output, start, end, duration, quality='Oryginał'):
     """Native yt-dlp resume and lossless MKV merge; preserve source codecs and FPS."""
     import yt_dlp
     last_log = [0.0]
     completed = set()
     downloaded = {}
     stream_count = max(1, len(info.get('requested_formats', [])))
+    last_value = [0.0]
     def progress(data):
         pipeline.check()
         if data['status'] == 'finished':
@@ -259,7 +296,8 @@ def download_original(pipeline, info, cache, output, start, end, duration):
         downloaded[data.get('filename', '')] = data.get('downloaded_bytes', 0)
         size = data.get('total_bytes') or data.get('total_bytes_estimate')
         fraction = (data.get('downloaded_bytes', 0) / size) if size else 0
-        value = min(.98, (len(completed) + (fraction if data['status'] != 'finished' else 0)) / stream_count)
+        value = max(last_value[0], min(.98, (len(completed) + (fraction if data['status'] != 'finished' else 0)) / stream_count))
+        last_value[0] = value
         eta = data.get('eta')
         estimate = 'szacuję czas po rozpoczęciu pobierania'
         if isinstance(eta, (int, float)) and math.isfinite(eta) and data['status'] != 'finished':
@@ -267,7 +305,7 @@ def download_original(pipeline, info, cache, output, start, end, duration):
             estimate = f'{scope} {remaining_time(eta)}'
         if data['status'] == 'finished':
             estimate = 'ścieżka pobrana; przygotowuję plik'
-        pipeline.log(f'VOD: {value * duration:.1f} / {duration:.1f} s · Oryginał · pobrano {sum(downloaded.values()) / 1e6:.1f} MB · {estimate}')
+        pipeline.log(f'VOD: {value * duration:.1f} / {duration:.1f} s · {quality} · pobrano {sum(downloaded.values()) / 1e6:.1f} MB · {estimate}')
     class Logger:
         def debug(self, message):
             pass
@@ -275,11 +313,12 @@ def download_original(pipeline, info, cache, output, start, end, duration):
             pipeline.log(message)
         def error(self, message):
             pipeline.log(message)
-    options = {**downloader_options('Oryginał'), 'ffmpeg_location': pipeline.ffmpeg(),
-               'outtmpl': str(cache / 'source.%(ext)s'), 'merge_output_format': 'mkv',
+    options = {**downloader_options(quality), 'ffmpeg_location': pipeline.ffmpeg(),
+               'outtmpl': str(cache / 'source.%(ext)s'), 'merge_output_format': 'mkv' if quality == 'Oryginał' else 'mp4',
                'continuedl': True, 'overwrites': False, 'progress_hooks': [progress], 'logger': Logger(),
-               'concurrent_fragment_downloads': 4, 'skip_unavailable_fragments': False}
-    pipeline.log('Pobieram oryginalne ścieżki obrazu i dźwięku, bez zmiany jakości…')
+               'concurrent_fragment_downloads': 8, 'skip_unavailable_fragments': False}
+    pipeline.log('Pobieram oryginalne ścieżki obrazu i dźwięku, bez zmiany jakości…' if quality == 'Oryginał'
+                 else f'Źródło ma już {quality}. Pobieram równolegle, bez ponownego kodowania…')
     with yt_dlp.YoutubeDL(options) as ydl:
         ydl.process_info(info)
         source = Path(info.get('filepath') or ydl.prepare_filename(info))
@@ -326,57 +365,81 @@ def download_vod(pipeline, url, folder, start=0, end=0, gpu=True, resolver=None,
                                              'quality': quality, 'provider': detected}), encoding='utf-8')
     if quality == 'Oryginał':
         return download_original(pipeline, info, cache, output, start, end, duration)
+    # A full matching source needs no resize or encoding. Existing compressed
+    # pieces keep their resumable path rather than starting the same job over.
+    if start == 0 and end == duration and matches_profile(info, quality) and not any(cache.glob('[0-9][0-9][0-9][0-9][0-9].ts')):
+        return download_original(pipeline, info, cache, output, start, end, duration, quality)
     count = math.ceil(total / CHUNK)
-    parts = []
-    started = time.monotonic()
-    processed = 0.0
-    saved_bytes = 0
+    lengths = [min(CHUNK, total - index * CHUNK) for index in range(count)]
+    parts = [cache / f'{index:05d}.ts' for index in range(count)]
+    cached = {}
     for index in range(count):
         pipeline.check()
-        length = min(CHUNK, total - index * CHUNK)
-        part = cache / f'{index:05d}.ts'
-        valid = False
+        part, length = parts[index], lengths[index]
         if part.exists():
             try:
-                valid = abs(pipeline.probe(part)['duration'] - length) < 2
+                if abs(pipeline.probe(part)['duration'] - length) < 2:
+                    cached[index] = part.stat().st_size
+                    pipeline.log(f'Wznawianie: zachowuję część {index + 1}/{count}.')
             except Exception:
-                valid = False
-        if not valid:
-            partial = cache / f'{index:05d}.partial.ts'
-            pipeline.log(f'VOD: {index * CHUNK:.1f} / {total:.1f} s · pobieram część {index + 1}/{count} · {quality}')
-            for attempt in range(3):
+                pass
+    progress = PartsProgress(pipeline, total, lengths, cached, quality)
+    pending = [index for index in range(count) if index not in cached]
+    abort = threading.Event()
+    gpu_enabled = threading.Event()
+    if gpu:
+        gpu_enabled.set()
+    cpu_gate = threading.Semaphore(1)
+    def part_download(index):
+        pipeline.check()
+        length, part = lengths[index], parts[index]
+        partial = cache / f'{index:05d}.partial.ts'
+        current_info = info
+        for attempt in range(3):
+            pipeline.check()
+            if abort.is_set():
+                from engine import Cancelled
+                raise Cancelled('Zatrzymano pozostałe części pobierania.')
+            use_gpu = gpu_enabled.is_set()
+            try:
+                if attempt:
+                    current_info = get_info(url)
+                with nullcontext() if use_gpu else cpu_gate:
+                    pipeline.check()
+                    run_media(pipeline, transcode_args(pipeline.ffmpeg(), current_info, start + index * CHUNK,
+                              length, partial, use_gpu, quality),
+                              lambda media, size, speed: progress.update(index, media, size, speed), abort=abort)
                 pipeline.check()
-                try:
-                    if attempt:
-                        info = get_info(url)
-                    progress = DownloadProgress(pipeline, total, index * CHUNK, quality, saved_bytes)
-                    run_media(pipeline, transcode_args(pipeline.ffmpeg(), info, start + index * CHUNK,
-                              length, partial, gpu, quality), progress)
-                    pipeline.check()
-                    if abs(pipeline.probe(partial)['duration'] - length) >= 2:
-                        raise RuntimeError('Odebrana część VOD-a jest niekompletna.')
-                except RuntimeError as exc:
-                    pipeline.check()
-                    if attempt == 2:
-                        raise RuntimeError('Nie udało się pobrać tej części po 3 próbach. Zachowano ukończone części do wznowienia.\n' + str(exc)) from exc
-                    encoder_error = re.search(r'cannot load.*(?:nv|cuda)|no (?:nvenc )?capable devices|openencodesessionex|initializeencoder|driver does not support.*nvenc|error while opening encoder', str(exc), re.I)
-                    if gpu and encoder_error:
-                        gpu = False
-                        pipeline.log('NVENC nie jest dostępny. Ponawiam kompresję na CPU…')
-                    else:
-                        pipeline.log(f'Ponawiam część {index + 1}/{count} · próba {attempt + 2}/3 · odświeżam adres filmu…')
+                if abs(pipeline.probe(partial)['duration'] - length) >= 2:
+                    raise RuntimeError('Odebrana część VOD-a jest niekompletna.')
+            except RuntimeError as exc:
+                pipeline.check()
+                if attempt == 2:
+                    raise RuntimeError('Nie udało się pobrać tej części po 3 próbach. Zachowano ukończone części do wznowienia.\n' + str(exc)) from exc
+                encoder_error = re.search(r'cannot load.*(?:nv|cuda)|no (?:nvenc )?capable devices|openencodesessionex|initializeencoder|driver does not support.*nvenc|error while opening encoder', str(exc), re.I)
+                if use_gpu and encoder_error:
+                    gpu_enabled.clear()
+                    pipeline.log('NVENC nie jest dostępny. Ponawiam kompresję na CPU…')
                 else:
-                    break
-            partial.replace(part)
-            processed += length
-        else:
-            pipeline.log(f'Wznawianie: zachowuję część {index + 1}/{count}.')
-        parts.append(part)
-        saved_bytes += part.stat().st_size
-        completed = min(total, (index + 1) * CHUNK)
-        rate = processed / max(.01, time.monotonic() - started)
-        estimate = f' · {rate:.1f}× · pozostało około {remaining_time((total - completed) / rate)}' if rate and completed < total else ''
-        pipeline.log(f'VOD: {completed:.1f} / {total:.1f} s · zapisano część {index + 1}/{count}{estimate}')
+                    pipeline.log(f'Ponawiam część {index + 1}/{count} · próba {attempt + 2}/3 · odświeżam adres filmu…')
+            else:
+                partial.replace(part)
+                progress.update(index, length, part.stat().st_size, force=True)
+                pipeline.log(f'VOD · zapisano część {index + 1}/{count}')
+                return
+    if pending:
+        workers = min(2 if gpu else 1, len(pending))
+        pipeline.log(f'Pobieram i kompresuję: {workers} {"części równolegle" if workers > 1 else "część na CPU"} · {quality}…')
+        with ThreadPoolExecutor(max_workers=workers, thread_name_prefix='clipfarm-vod') as executor:
+            futures = [executor.submit(part_download, index) for index in pending]
+            try:
+                for future in as_completed(futures):
+                    future.result()
+            except BaseException:
+                abort.set()
+                for future in futures:
+                    future.cancel()
+                raise
     pipeline.check()
     pipeline.log('Łączę pobrane części w MP4…')
     manifest = cache / 'concat.txt'

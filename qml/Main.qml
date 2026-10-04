@@ -42,7 +42,7 @@ ApplicationWindow {
         Sidebar { Layout.preferredWidth: 296; Layout.fillHeight: true }
         ColumnLayout {
             Layout.fillWidth: true; Layout.fillHeight: true; Layout.margins: 24; spacing: 16
-            ColumnLayout { spacing: 6; Label { text: window.sourceTab === "Film" ? "Z filmu. W najlepsze momenty." : "Z linku prosto do klipów."; color: Theme.text; font.pixelSize: 30; font.weight: Font.DemiBold } Label { text: window.sourceTab === "Film" ? "Dodaj materiał, znajdź fragmenty i przygotuj klipy do publikacji." : "Pobierz materiał z Kicka, Twitcha, YouTube lub X."; color: Theme.muted; font.pixelSize: 13 } }
+            ColumnLayout { Layout.fillWidth: true; spacing: 6; Label { Layout.fillWidth: true; text: window.sourceTab === "Film" ? "Z filmu. W najlepsze momenty." : "Z linku prosto do klipów."; color: Theme.text; font.pixelSize: 30; font.weight: Font.DemiBold; wrapMode: Text.WordWrap } Label { Layout.fillWidth: true; text: window.sourceTab === "Film" ? "Dodaj materiał, znajdź fragmenty i przygotuj klipy do publikacji." : "Pobierz materiał z Kicka, Twitcha, YouTube lub X."; color: Theme.muted; font.pixelSize: 13; wrapMode: Text.WordWrap } }
             SegmentTabs { objectName: "sourceTabs"; Layout.preferredWidth: 290; options: ["Film", "Pobierz VOD"]; value: window.sourceTab; onChosen: value => window.sourceTab = value }
             VideoCard { Layout.fillWidth: true; visible: window.sourceTab === "Film" }
             VodCard { Layout.fillWidth: true; visible: window.sourceTab === "Pobierz VOD" }
@@ -61,7 +61,7 @@ ApplicationWindow {
                 Item {
                     id: empty; anchors.fill: parent; visible: opacity > 0
                     transform: Translate { y: results.state === "empty" ? 0 : 10; Behavior on y { NumberAnimation { duration: Theme.normal; easing.type: Easing.OutCubic } } }
-                    ColumnLayout { anchors.centerIn: parent; width: Math.min(parent.width - 48, 440); spacing: 14; Image { source: "../assets/clipfarm-mark.png"; Layout.alignment: Qt.AlignHCenter; Layout.preferredWidth: 54; Layout.preferredHeight: 70; fillMode: Image.PreserveAspectFit; opacity: 0.8 } Label { text: "Najlepsze momenty są jeszcze przed Tobą"; color: Theme.text; font.pixelSize: 20; wrapMode: Text.WordWrap; horizontalAlignment: Text.AlignHCenter; Layout.fillWidth: true } Label { text: "Po analizie zobaczysz tu klipy. Każdy możesz obejrzeć, poprawić i wyeksportować."; color: Theme.muted; font.pixelSize: 13; wrapMode: Text.WordWrap; horizontalAlignment: Text.AlignHCenter; Layout.fillWidth: true } }
+                    ColumnLayout { anchors.centerIn: parent; width: Math.min(parent.width - 48, 440); spacing: 14; Image { visible: results.height >= 220; source: "../assets/clipfarm-mark.png"; Layout.alignment: Qt.AlignHCenter; Layout.preferredWidth: 54; Layout.preferredHeight: 70; fillMode: Image.PreserveAspectFit; opacity: 0.8 } Label { text: "Najlepsze momenty są jeszcze przed Tobą"; color: Theme.text; font.pixelSize: 20; wrapMode: Text.WordWrap; horizontalAlignment: Text.AlignHCenter; Layout.fillWidth: true } Label { text: "Po analizie zobaczysz tu klipy. Każdy możesz obejrzeć, poprawić i wyeksportować."; color: Theme.muted; font.pixelSize: 13; wrapMode: Text.WordWrap; horizontalAlignment: Text.AlignHCenter; Layout.fillWidth: true } }
                 }
                 Item {
                     id: loading; anchors.fill: parent; opacity: 0; visible: opacity > 0
@@ -101,6 +101,7 @@ ApplicationWindow {
             }
             Components.ProgressBar { Layout.fillWidth: true; value: backend.progress; busy: backend.busy }
         }
+        SettingsPreview { Layout.preferredWidth: 248; Layout.fillHeight: true; Layout.topMargin: 24; Layout.bottomMargin: 24; Layout.rightMargin: 24 }
     }
     DropArea { anchors.fill: parent; z: -1; enabled: !backend.busy && !updates.installing; onDropped: event => { if (event.hasUrls) { backend.dropFiles(event.urls); event.acceptProposedAction(); } } }
     Rectangle { anchors.fill: parent; z: 10; color: "#66000000"; opacity: window.detailsOpen || preview.opened ? 1 : 0; visible: opacity > 0; Behavior on opacity { NumberAnimation { duration: Theme.fast } } MouseArea { anchors.fill: parent; onClicked: { window.detailsOpen = false; preview.opened = false; backend.closePreview(); } } }

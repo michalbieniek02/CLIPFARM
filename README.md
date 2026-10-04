@@ -247,6 +247,22 @@ Wymaga lokalnych materiałów `checks/synthetic.mp4` i `checks/e2e/narrated.mp4`
 oraz `checks/e2e/transcript.json` (nie są dostarczane ze świeżym klonem).
 Test używa kontrolowanego wyniku AI, natomiast eksport FFmpeg i dekodowanie QtMultimedia są rzeczywiste.
 
+## Podgląd ustawień
+
+Po prawej stronie jest stały podgląd na lekko rozmytym, przykładowym zdjęciu osoby.
+Zmiana formatu, kadrowania, kolorów, odbicia i napisów od razu zmienia ten kadr.
+Napisy korzystają z tej samej czcionki Anton i rozmiaru co eksport; ich animację można
+wstrzymać. Przyspieszenie 1,1× zmienia tempo animacji i pokazywaną długość wynikowego klipu.
+Tryb Film · minuty pokazuje 60 s źródła lub 54,5 s po przyspieszeniu. Dokładność Whisper
+jest opisana pod podglądem, bo zmienia rozpoznawanie mowy, a nie wygląd obrazu.
+
+Zdjęcie jest lokalne, wygenerowane wbudowanym narzędziem imagegen; nie wymaga internetu
+i nie zastępuje miniatury dodanego filmu. Plik: `assets/settings-preview-person.png`.
+Dokładny prompt jest w metadanych PNG i w `assets/settings-preview-person.prompt.txt`.
+Podgląd mieści się w oknie 1360×900 i 1100×780; respektuje wyłączone animacje Windows.
+Test klikający kontrolki: `tests/settings_preview_review.py` (wymaga lokalnego projektu
+`checks/qt/project.json` i powiązanego testowego filmu).
+
 ## Pobieranie i aktualizacje
 
 Pobieranie VOD pokazuje zapisane megabajty i postęp podczas zapisu, mniej więcej co 250 ms.
@@ -256,6 +272,20 @@ Brak postępu przez 90 sekund powoduje zatrzymanie FFmpeg i odświeżenie adresu
 Każda część ma maksymalnie trzy próby. Błąd sieci zachowuje wybrany NVENC; na CPU
 przechodzimy przy błędzie inicjalizacji kodera. Łączenie MP4 jest osobnym etapem.
 Oryginał pokazuje otrzymane bajty i ETA yt-dlp; przy osobnych ścieżkach ETA dotyczy bieżącej ścieżki.
+
+Pełny VOD o już pasującej rozdzielczości, klatkażu i bitrate (H.264/AAC) jest pobierany
+bez ponownego kodowania, z maksymalnie ośmioma równoległymi fragmentami.
+Źródło z nieznanymi parametrami nadal trafia do kompresji. Zakresy oraz filmy wymagające
+zmiany jakości są kompresowane w dwóch częściach równolegle z NVENC; na CPU używamy
+jednego kodera. Wznowienie zachowuje gotowe części, nawet gdy ukończyły się poza kolejnością.
+Postęp i ETA sumują rzeczywisty postęp wszystkich części; błąd zatrzymuje pozostałe zadania.
+Istniejący cache części pozostaje na ścieżce kompresji, aby nie pobierać ich ponownie.
+
+Pomiar na tym samym 20-minutowym fragmencie Kicka 480p30: wcześniejsza kompresja szeregowa
+42,3 s, pobranie pasującego źródła bez kodowania 6,3 s (około 6,7× szybciej).
+To lokalny pomiar na tym komputerze i połączeniu, a nie stała gwarantowana prędkość.
+`tests/download_parallel_review.py` sprawdza zachowanie dekodowanych klatek przy kopiowaniu,
+rzeczywiste równoległe procesy FFmpeg, ponowienie, anulowanie, wznowienie i zakończenie przy błędzie.
 
 Workflow [Windows release](https://github.com/michalbieniek02/CLIPFARM/actions/workflows/release.yml)
 po każdym pushu do `main` uruchamia testy na Windows i publikuje gotową paczkę w GitHub Releases.

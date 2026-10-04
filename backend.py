@@ -14,6 +14,7 @@ from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QFileDialog
 
 from engine import Cancelled, Pipeline, ROOT, minute_clips, subtitle_text, validate_clips, validate_options
+from captions import FONT_SIZE
 from framing import FRAMING_LABELS, FRAMING_HELP
 from transcripts import existing_transcript, read_transcript, remember_transcript, validate_segments
 from ui_media import thumbnail
@@ -173,6 +174,7 @@ class Backend(QObject):
     framingHelp = Property(str, lambda self: FRAMING_HELP.get(FRAMING_LABELS.get(self._settings['framing']), '') if self._settings['format'] == 'Pionowy 9:16' else 'Zachowamy oryginalne proporcje całego filmu.', notify=settingsChanged)
     downloadProviders = Property('QStringList', lambda self: list(PROVIDERS), constant=True)
     downloadQualities = Property('QStringList', lambda self: list(QUALITIES), constant=True)
+    captionSize = Property(int, lambda self: FONT_SIZE, constant=True)
 
     @Slot(str, 'QVariant')
     def setSetting(self, name, value):

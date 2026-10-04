@@ -4,6 +4,7 @@ import QtQuick.Layouts
 Rectangle {
     color: Theme.sidebar
     ScrollView {
+        objectName: "settingsScroll"
         anchors.fill: parent; clip: true; contentWidth: availableWidth
         ColumnLayout {
             width: parent.width; spacing: 18
@@ -18,7 +19,7 @@ Rectangle {
                 Layout.fillWidth: true; Layout.leftMargin: 24; Layout.rightMargin: 24
                 enabled: !backend.busy; spacing: 12
                 Label { text: "TRYB TWORZENIA"; color: Theme.muted; font.pixelSize: 10; font.letterSpacing: 1 }
-                SegmentTabs { Layout.fillWidth: true; options: ["AI klipy", "Film · minuty"]; value: backend.settings.mode; onChosen: value => backend.setSetting("mode", value) }
+                SegmentTabs { objectName: "settingsModeTabs"; Layout.fillWidth: true; options: ["AI klipy", "Film · minuty"]; value: backend.settings.mode; onChosen: value => backend.setSetting("mode", value) }
                 Label { Layout.fillWidth: true; text: backend.settings.mode === "AI klipy" ? "Liczbę klipów dobierzemy automatycznie do filmu." : "Cały film podzielimy na kolejne minutowe części."; color: Theme.muted; font.pixelSize: 11; wrapMode: Text.WordWrap }
                 Label { text: "DŁUGOŚĆ KLIPU"; color: Theme.muted; font.pixelSize: 10; font.letterSpacing: 1; Layout.topMargin: 8 }
                 RowLayout {
@@ -29,16 +30,16 @@ Rectangle {
                     Label { text: "s"; color: Theme.muted }
                 }
                 Label { text: "FORMAT I KADROWANIE"; color: Theme.muted; font.pixelSize: 10; font.letterSpacing: 1; Layout.topMargin: 8 }
-                SegmentTabs { Layout.fillWidth: true; options: ["Pionowy 9:16", "Oryginalny"]; value: backend.settings.format; onChosen: value => backend.setSetting("format", value) }
-                Choice { Layout.fillWidth: true; model: backend.framingLabels; currentIndex: backend.framingLabels.indexOf(backend.settings.framing); enabled: backend.settings.format === "Pionowy 9:16"; Accessible.name: "Kadrowanie"; onActivated: backend.setSetting("framing", currentText) }
+                SegmentTabs { objectName: "settingsFormatTabs"; Layout.fillWidth: true; options: ["Pionowy 9:16", "Oryginalny"]; value: backend.settings.format; onChosen: value => backend.setSetting("format", value) }
+                Choice { objectName: "settingsFramingChoice"; Layout.fillWidth: true; model: backend.framingLabels; currentIndex: backend.framingLabels.indexOf(backend.settings.framing); enabled: backend.settings.format === "Pionowy 9:16"; Accessible.name: "Kadrowanie"; onActivated: backend.setSetting("framing", currentText) }
                 Label { Layout.fillWidth: true; text: backend.framingHelp; color: Theme.muted; font.pixelSize: 11; wrapMode: Text.WordWrap }
                 Label { text: "DODATKI EKSPORTU"; color: Theme.muted; font.pixelSize: 10; font.letterSpacing: 1; Layout.topMargin: 8 }
                 ColumnLayout {
                     spacing: 2
-                    ToggleSwitch { text: "Napisy słowo po słowie"; checked: backend.settings.burn; onToggled: backend.setSetting("burn", checked) }
-                    ToggleSwitch { text: "Delikatna korekcja kolorów"; checked: backend.settings.light_color; onToggled: backend.setSetting("light_color", checked) }
-                    ToggleSwitch { text: "Przyspieszenie 1,1×"; checked: backend.settings.speed_up; onToggled: backend.setSetting("speed_up", checked) }
-                    ToggleSwitch { text: "Odbicie lustrzane"; checked: backend.settings.mirror; onToggled: backend.setSetting("mirror", checked) }
+                    ToggleSwitch { objectName: "burnSwitch"; text: "Napisy słowo po słowie"; checked: backend.settings.burn; onToggled: backend.setSetting("burn", checked) }
+                    ToggleSwitch { objectName: "colorSwitch"; text: "Delikatna korekcja kolorów"; checked: backend.settings.light_color; onToggled: backend.setSetting("light_color", checked) }
+                    ToggleSwitch { objectName: "tempoSwitch"; text: "Przyspieszenie 1,1×"; checked: backend.settings.speed_up; onToggled: backend.setSetting("speed_up", checked) }
+                    ToggleSwitch { objectName: "mirrorSwitch"; text: "Odbicie lustrzane"; checked: backend.settings.mirror; onToggled: backend.setSetting("mirror", checked) }
                 }
                 Label { text: "DOKŁADNOŚĆ TRANSKRYPCJI"; color: Theme.muted; font.pixelSize: 10; font.letterSpacing: 1; Layout.topMargin: 8 }
                 Choice { Layout.fillWidth: true; model: ["Szybka", "Zrównoważona", "Dokładna", "Najdokładniejsza"]; currentIndex: model.indexOf(backend.settings.whisper); Accessible.name: "Dokładność transkrypcji"; onActivated: backend.setSetting("whisper", currentText) }

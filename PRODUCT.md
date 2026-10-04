@@ -23,6 +23,12 @@ ponownie z lokalnym dopasowaniem słów do dźwięku. Słowa dochodzą kolejno d
 aktualne słowo jest żółte, a wcześniej wypowiedziane zostają białe. Dopasowanie jest
 zapamiętywane i nie wywołuje Codexa ani nie tworzy tekstu transkrypcji od nowa.
 
+Stały podgląd ustawień na lokalnym, przykładowym zdjęciu osoby pokazuje format,
+kadrowanie, kolor, odbicie i napisy jeszcze przed eksportem. Animacja napisów
+uwzględnia tempo, a opis pod kadrem pokazuje wynikową długość klipu i ustawienie
+transkrypcji. Podgląd działa także w zakładce pobierania VOD i nie zastępuje
+materiału użytkownika.
+
 ## Platform
 Windows desktop, Python 3.11+ / PySide6 + QML (Qt Quick).
 Logika mediów pozostaje w Pythonie; interfejs komunikuje się z backendem QObject.
