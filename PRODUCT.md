@@ -28,16 +28,24 @@ zapamiętywane i nie wywołuje Codexa ani nie tworzy tekstu transkrypcji od nowa
 
 Stały podgląd ustawień w prawym panelu o szerokości 248 px pokazuje lokalne,
 przykładowe zdjęcie osoby wewnątrz ramki iPhone odtworzonej z dostarczonej referencji
-w natywnej geometrii QML. Pionowe 9:16 i oryginalne proporcje obrazu pozostają
-niezniekształcone wewnątrz wysokiego ekranu telefonu z czarnymi pasami. Podgląd pokazuje
+w natywnej geometrii QML, z zaokrągloną maską, wyspą i dolnym wskaźnikiem.
+Ekran ma proporcje 9:19,5. Pionowe 9:16 i oryginalne proporcje pozostają dostępne;
+format „Telefon 9:19,5” odpowiada całemu ekranowi podglądu i eksportuje 1080×2340.
+„Wypełnij ekran” wybiera ten format, centralne przycięcie, przybliżenie 1× i środek
+źródła. Obraz wypełnia ekran przez przycięcie, z zachowaniem proporcji. Jest to
+dopasowanie do telefonu w podglądzie; wygląd na innych urządzeniach i platformach
+zależy od ich ekranu i odtwarzacza. Podgląd pokazuje
 format, kadrowanie, kolor, odbicie i napisy jeszcze przed eksportem. Animacja napisów
 uwzględnia tempo, a opis pod kadrem pokazuje wynikową długość klipu i ustawienie
 transkrypcji. Podgląd działa także w zakładce pobierania VOD, przy oknie 1360×900
-i minimum 1100×780. W trybie całego obrazu użytkownik ustawia przybliżenie 1–4×
-i przesuwa punkt źródła; odkryte obszary są czarne. Położenie napisów i punkt źródła
-są zapisane jako współrzędne 0–1. Reset przywraca automatyczne położenie napisów
-i pełny obraz. Podgląd i eksport korzystają ze wspólnej geometrii. Ustawienia
-czcionki, rozmiaru, położenia, przybliżenia i kadru zapisują się w projekcie.
+i minimum 1100×780. W trybach całego obrazu i centralnego przycięcia użytkownik
+ustawia przybliżenie 1–4× i przesuwa punkt źródła. Cały obraz dopuszcza czarne
+dopełnienie; przycięcie ogranicza przesuwanie do krawędzi źródła, aby wypełnienie
+pozostało pełne. Napisy można ustawiać na całym wybranym kadrze, także 1080×2340.
+Położenie napisów i punkt źródła są zapisane jako współrzędne 0–1. Reset przywraca
+automatyczne położenie napisów, przybliżenie 1× i środkowy punkt źródła.
+Podgląd i eksport korzystają ze wspólnej geometrii. Format, kadrowanie, czcionka,
+rozmiar, położenie i przybliżenie zapisują się w projekcie i wracają po jego otwarciu.
 Zdjęcie jest oznaczone jako przykładowe i nie zastępuje materiału użytkownika.
 
 „Edytuj napisy” w nagłówku otwiera rzeczywiste segmenty gotowej transkrypcji z ich
@@ -49,7 +57,8 @@ Edycja zapisuje się lokalnie, bez wywołania AI ani ponownej transkrypcji.
 Podążanie za twarzą wykrywa twarz lokalnie około 8 razy na sekundę. Wygładzanie
 uwzględnia rzeczywisty upływ czasu (stała 0,48 s), a ograniczone krzywe sześcienne
 wyznaczają położenie każdej klatki bez przeskoków i przekraczania celów ruchu.
-Rzeczywisty eksport jest sprawdzany dla 60 FPS i zmiennego klatkażu.
+Podążanie korzysta z wybranego kadru eksportu. Rzeczywisty eksport jest sprawdzany
+dla 2 FPS, 60 FPS, zmiennego klatkażu i tempa 1,1×, z zachowaniem ostatniej klatki.
 
 ## Platform
 Windows desktop, Python 3.11+ / PySide6 + QML (Qt Quick).

@@ -110,25 +110,37 @@ Modele Whisper są w `models`. Gotowa transkrypcja jest używana ponownie przy w
 
 ## Kadrowanie i ponowne użycie transkrypcji
 
+Format 9:16 eksportuje 1080×1920, „Telefon 9:19,5” — 1080×2340, a „Oryginalny”
+zachowuje proporcje filmu. „Wypełnij ekran” pod telefonem wybiera „Telefon 9:19,5”
+i „Wypełnij · środek”, ustawia przybliżenie 1× oraz środek źródła. Wideo wypełnia
+cały ekran telefonu w podglądzie przez przycięcie, bez rozciągania. Następnie zaznacz
+klipy i kliknij „Eksportuj klipy”, aby zapisać MP4 z tym samym formatem i kadrowaniem.
+Proporcje telefonu dotyczą tego podglądu; inne urządzenia i platformy mogą wyświetlać
+film inaczej.
+
 „Cały obraz · czarne pasy” przy domyślnym przybliżeniu 1× dopasowuje cały film
-do 1080×1920 bez obcinania boków.
+do wybranego kadru bez obcinania boków.
 Dla poziomego filmu pasy pojawiają się u góry i u dołu. „Wypełnij · środek” przycina obraz,
 a „Podążaj za twarzą” używa lokalnego YuNet / OpenCV do przesuwania pionowego kadru.
 Przy wielu osobach wybierana jest duża twarz z preferencją zachowania ciągłości.
 Gdy w całym klipie nie wykryto twarzy, eksport zachowuje cały obraz z pasami.
 Po chwilowym zniknięciu twarzy kadr pozostaje w ostatnim położeniu.
-Podgląd i eksport używają tego samego trybu. Oryginalny format zachowuje proporcje filmu.
+Podgląd i eksport używają tego samego trybu i wybranego formatu, także przy podążaniu
+za twarzą.
 
-W trybie całego obrazu suwak „Przybliżenie” ustawia 1–4×. Przeciągnij zdjęcie w podglądzie,
-aby wybrać punkt źródła; po ustawieniu fokusu można też użyć strzałek.
-Kółko myszy zmienia przybliżenie. Odkryte obszary wypełniają się czernią.
+W trybach całego obrazu i centralnego przycięcia suwak przybliżenia ustawia 1–4×.
+Przeciągnij zdjęcie w podglądzie, aby wybrać punkt źródła; po ustawieniu fokusu
+można też użyć strzałek.
+Kółko myszy zmienia przybliżenie. Tryb całego obrazu dopuszcza czarne dopełnienie;
+centralne przycięcie ogranicza przesuwanie do krawędzi źródła, aby kadr pozostał pełny.
 Położenie źródła zapisuje się jako współrzędne 0–1. `video_layout.py` wylicza wspólną
 geometrię podglądu oraz skalowania, przycięcia i czarnego dopełnienia w eksporcie.
 
 Podążanie za twarzą analizuje obraz około 8 razy na sekundę. Wygładzanie korzysta
 z rzeczywistych czasów klatek i stałej 0,48 s; ograniczone krzywe sześcienne wyznaczają
 położenie przycięcia dla każdej klatki bez przekraczania celów ruchu.
-Test obejmuje rzeczywiste klatki eksportu 60 FPS i materiał ze zmiennym klatkażem (VFR).
+Testy obejmują rzeczywisty eksport 2 FPS, 60 FPS, materiał ze zmiennym klatkażem (VFR)
+i tempo 1,1×, w tym zachowanie ostatniej klatki.
 
 Obok filmu dostępne są trzy działania:
 
@@ -274,16 +286,20 @@ Test używa kontrolowanego wyniku AI, natomiast eksport FFmpeg i dekodowanie QtM
 
 Po prawej stronie jest stały panel o szerokości 248 px z lekko rozmytym,
 przykładowym zdjęciem osoby. Ramka iPhone odwzorowuje dostarczoną referencję
-przez natywną geometrię QML. Wysoki ekran telefonu mieści niezniekształcony kadr
-eksportu 9:16 lub oryginalny 16:9 zdjęcia; pozostałe miejsce jest czarne.
+przez natywną geometrię QML, z zaokrągloną maską, wyspą i dolnym wskaźnikiem.
+Ekran 9:19,5 pokazuje cały kadr formatu „Telefon 9:19,5”; przy 9:16 i oryginalnym
+16:9 zdjęcia pozostałe miejsce w telefonie jest czarne. „Wypełnij ekran” ustawia
+pełny kadr telefonu również dla eksportu.
 Zmiana formatu, kadrowania, kolorów, odbicia i napisów od razu zmienia podgląd.
 
 Przeciągnij całą linię przykładowych napisów albo ustaw ją strzałkami po nadaniu fokusu.
-Pola X i Y w lewym panelu przyjmują położenie środka tekstu w procentach kadru.
+Pola X i Y w lewym panelu przyjmują położenie środka tekstu w procentach całego
+wybranego kadru, także 1080×2340.
 Rozmiar ustawisz suwakiem lub polem liczbowym w zakresie 24–160 px dla szerokości 1080 px.
 Wybrana czcionka i rozmiar obowiązują również w eksporcie. „Reset pozycji” przywraca
 automatyczne położenie napisów, przybliżenie 1× i środkowy punkt źródła.
-Ustawienia położenia, czcionki, rozmiaru oraz przybliżenia i kadru zapisują się z projektem.
+Format, kadrowanie, położenie, czcionka, rozmiar i przybliżenie zapisują się z projektem
+i wracają po jego otwarciu.
 
 Lista zawiera 20 rzeczywistych, lokalnie dołączonych czcionek; każda nazwa jest pokazana
 w swojej rodzinie. Dostępne rodziny: Anton, Bebas Neue, Montserrat, Poppins, Inter,
@@ -307,12 +323,21 @@ napisów i obrazu, strzałki, pola położenia i rozmiaru, wybór czcionki, prop
 odbicie, kolor i wyłączone animacje. Wymaga lokalnego projektu `checks/qt/project.json`
 i powiązanego testowego filmu.
 
-Cztery testy działające bez sieci są włączone do Windows release CI:
+Test `tests/phone_preview_review.py` klika rzeczywisty interfejs Qt w obu rozmiarach
+okna, sprawdza pełny ekran i maskę telefonu, przeciąganie, strzałki, przybliżenie,
+ograniczenie kadru, napisy, formaty, VOD i zapis/otwarcie projektu. Wykonuje także
+rzeczywisty eksport backendu NVENC 1080×2340 i sprawdza brak ostrzeżeń QML.
+Uruchom lokalnie: `.\runtime\Scripts\python.exe tests\phone_preview_review.py`.
+
+W Windows release CI działają między innymi następujące testy bez sieci:
 
 - `tests/caption_editor_review.py`: rzeczywisty edytor i backend, zachowanie czasów,
   przeliczenie słów, szkice, błędy zapisu, blokada podczas pracy i fokus.
 - `tests/layout_caption_review.py`: rzeczywisty eksport FFmpeg i dekodowane piksele RGB,
   punkt źródła, czarne dopełnienie, czcionka, rozmiar, położenie, odbicie i zapis projektu.
+- `tests/phone_canvas_review.py`: rzeczywisty eksport CPU 1080×2340, przycięcie bez
+  rozciągania, pełne krawędzie przy przesuwaniu i przybliżeniu, napisy, formaty,
+  podążanie za twarzą i brak twarzy oraz klatki/czasy 2 FPS, 60 FPS, VFR i tempa 1,1×.
 - `tests/face_smoothing_review.py`: rzeczywiste klatki 60 FPS i VFR, wygładzanie,
   ograniczenie krzywych, YuNet, brak twarzy i anulowanie.
 - `tests/font_catalog_review.py`: wszystkie 20 plików TTF, licencje i sumy kontrolne,

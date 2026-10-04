@@ -229,15 +229,24 @@ class Pipeline:
 
     def export(self, source, clips, segments, destination, vertical=True, burn=False, encoder='auto', framing='fit', timing_work=None,
                light_color=False, speed_up=False, mirror=False, caption_font='Anton', caption_size=84,
-               caption_position=None, fit_zoom=1, fit_focus=(.5, .5)):
-        from framing import FIT_FILTER, CENTER_FILTER, face_filter
+               caption_position=None, fit_zoom=1, fit_focus=(.5, .5), canvas_size=(1080, 1920)):
+        from framing import fit_filter, face_filter
         from captions import phrases, ass_text, progressive_cues, retime_cues, FONT_DIR
-        from video_layout import frame_layout, letterbox_filter
+        from video_layout import canvas_dimensions, frame_layout, letterbox_filter
         if framing not in ('fit', 'center', 'face'):
             raise ValueError('Nieznany tryb kadrowania.')
         destination = Path(destination)
         destination.mkdir(parents=True, exist_ok=True)
         metadata = self.probe(source)
+        output_size = list(canvas_dimensions(canvas_size)) if vertical else [
+            metadata['width'] // 2 * 2, metadata['height'] // 2 * 2]
+        face_frame_duration = None
+        if vertical and framing == 'face':
+            import av
+            with av.open(str(source)) as container:
+                stream = container.streams.video[0]
+                rate = stream.average_rate or stream.guessed_rate
+                face_frame_duration = 1 / float(rate) if rate and rate > 0 else 1 / 30
         has_audio = bool(metadata.get('audio'))
         validate_clips(clips, metadata['duration'], 1, metadata['duration'], strict=True)
         if burn and segments:
@@ -268,28 +277,30 @@ class Pipeline:
             if light_color:
                 filters.append('eq=contrast=1.03:brightness=0.02:saturation=1.05')
             fitted = vertical and framing == 'fit'
-            if mirror and fitted:
+            manual_framing = vertical and framing in ('fit', 'center')
+            if mirror and manual_framing:
                 filters.append('hflip')
             if vertical:
                 if framing == 'face':
                     follow = face_filter(source, clip['start'], clip['end'], command_file,
-                                         self.check, self.log)
-                    fitted = follow == FIT_FILTER
+                                         self.check, self.log, canvas_size)
+                    fitted = follow == fit_filter(canvas_size)
                     filters.append(follow)
                 else:
-                    filters.append(FIT_FILTER if fitted else CENTER_FILTER)
+                    filters.append(fit_filter(canvas_size))
             else:
                 filters.append('scale=trunc(iw/2)*2:trunc(ih/2)*2,setsar=1')
             layout = frame_layout(metadata['width'], metadata['height'], vertical, fitted,
-                                  fit_zoom if framing == 'fit' else 1,
-                                  *(fit_focus if framing == 'fit' else (.5, .5)),
-                                  caption_position=caption_position, reserve_captions=burn and bool(subtitle))
-            if fitted:
+                                  fit_zoom if manual_framing else 1,
+                                  *(fit_focus if manual_framing else (.5, .5)),
+                                  caption_position=caption_position, reserve_captions=burn and bool(subtitle),
+                                  canvas_size=canvas_size)
+            if fitted or manual_framing:
                 filters[-1] = letterbox_filter(layout)
             # Apply requested transforms before ASS subtitles so captions stay readable.
             if speed_up:
                 filters.append('setpts=(PTS-STARTPTS)/1.1')
-            if mirror and not (vertical and framing == 'fit'):
+            if mirror and not manual_framing:
                 filters.append('hflip')
             if burn and subtitle:
                 width, height = layout['canvas_width'], layout['canvas_height']
@@ -307,6 +318,13 @@ class Pipeline:
                         '-vf', ','.join(filters), '-c:v', 'h264_nvenc' if hardware else 'libx264']
                 args += ['-preset', 'p4', '-cq', '21'] if hardware else ['-preset', 'fast', '-crf', '21']
                 args += ['-pix_fmt', 'yuv420p']
+                if vertical and framing == 'face' and not fitted:
+                    # sendcmd/setpts can leave encoded packet duration unset.
+                    # Keep each original timestamp (including VFR), but give
+                    # such packets a nominal duration so MP4 keeps the last frame.
+                    nominal = face_frame_duration / speed
+                    args += ['-fps_mode', 'passthrough', '-bsf:v',
+                             rf'setts=pts=PTS:dts=DTS:duration=if(eq(DURATION\,0)\,{nominal:.12f}/TB\,DURATION)']
                 if speed_up and has_audio:
                     args += ['-af', 'asetpts=PTS-STARTPTS,atempo=1.1']
                 args += ['-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', str(partial)]
@@ -332,7 +350,8 @@ class Pipeline:
             'files': written, 'vertical': vertical, 'framing': framing, 'burn': burn,
             'light_color': light_color, 'speed_up': speed_up, 'mirror': mirror,
             'caption_font': caption_font, 'caption_size': caption_size, 'caption_position': caption_position,
-            'fit_zoom': fit_zoom, 'fit_focus': fit_focus}, ensure_ascii=False, indent=2), encoding='utf-8')
+            'fit_zoom': fit_zoom, 'fit_focus': fit_focus,
+            'canvas_size': output_size}, ensure_ascii=False, indent=2), encoding='utf-8')
         return written
 
 

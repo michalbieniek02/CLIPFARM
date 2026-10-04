@@ -8,8 +8,10 @@ Rectangle {
     objectName: "settingsPreview"
     color: Theme.surface
     radius: Theme.radius
-    readonly property bool vertical: backend.settings.format === "Pionowy 9:16"
+    readonly property bool vertical: backend.settings.format !== "Oryginalny"
+    readonly property bool phoneFormat: backend.settings.format === "Telefon 9:19,5"
     readonly property bool fitted: vertical && backend.settings.framing === "Cały obraz · czarne pasy"
+    readonly property bool movable: vertical && backend.settings.framing !== "Podążaj za twarzą"
     readonly property real tempo: backend.settings.speed_up ? 1.1 : 1
     readonly property var layout: backend.previewLayout
     property bool playing: true
@@ -17,7 +19,7 @@ Rectangle {
     readonly property var words: ["TAK", "WYGLĄDA", "TWÓJ", "KLIP"]
     Accessible.role: Accessible.Graphic
     Accessible.name: "Podgląd ustawień na przykładowym zdjęciu w telefonie"
-    Accessible.description: "Przeciągnij napisy, aby zmienić ich położenie. W trybie czarnych pasów przeciągnij obraz, aby wybrać kadr."
+    Accessible.description: "Przeciągnij napisy lub obraz, aby zmienić ich położenie. Wypełnij ekran ustawia format i kadrowanie także w eksporcie."
 
     function clamp(value, low, high) { return Math.min(high, Math.max(low, value)); }
     function captionPosition(x, y) {
@@ -27,9 +29,13 @@ Rectangle {
         backend.setSetting("caption_custom", true);
     }
     function focusPosition(x, y) {
-        if (backend.busy || !root.fitted) return;
+        if (backend.busy || !root.movable) return;
         backend.setSetting("fit_x", root.clamp(x, 0, 1));
         backend.setSetting("fit_y", root.clamp(y, 0, 1));
+    }
+    function nudgeFocus(x, y) {
+        root.focusPosition((frame.width / 2 - picture.x) / picture.width + x,
+                           (frame.height / 2 - picture.y) / picture.height + y);
     }
     function resetPosition() {
         backend.setSetting("caption_custom", false);
@@ -65,14 +71,14 @@ Rectangle {
         Item {
             id: stage
             Layout.fillWidth: true
-            Layout.preferredHeight: Math.min(width * 19.5 / 9, root.height - 334)
+            Layout.preferredHeight: Math.min(width * 19.5 / 9, root.height - 354)
             Layout.minimumHeight: 280
             Item {
                 id: phone
                 objectName: "settingsPreviewPhone"
                 anchors.centerIn: parent
-                width: Math.min(parent.width - 6, parent.height * 9 / 19.5)
-                height: width * 19.5 / 9
+                width: Math.min(parent.width - 6, (parent.height - 12) * 9 / 19.5 + 12)
+                height: (width - 12) * 19.5 / 9 + 12
                 Rectangle { x: -2; y: phone.height * .20; width: 3; height: phone.height * .075; radius: 1.5; color: "#64666a" }
                 Rectangle { x: -2; y: phone.height * .30; width: 3; height: phone.height * .075; radius: 1.5; color: "#64666a" }
                 Rectangle { x: phone.width - 1; y: phone.height * .28; width: 3; height: phone.height * .11; radius: 1.5; color: "#64666a" }
@@ -85,6 +91,9 @@ Rectangle {
                     anchors.margins: 6
                     radius: phone.width * .135
                     color: "black"
+                    clip: true
+                    layer.enabled: true
+                    layer.effect: MultiEffect { maskEnabled: true; maskSource: screenMask; autoPaddingEnabled: false }
                     Rectangle {
                         id: frame
                         objectName: "settingsPreviewFrame"
@@ -117,7 +126,7 @@ Rectangle {
                             id: imageDrag
                             objectName: "settingsPreviewImageDrag"
                             anchors.fill: parent
-                            enabled: root.fitted && !backend.busy
+                            enabled: root.movable && !backend.busy
                             hoverEnabled: true
                             cursorShape: pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor
                             property real initialX
@@ -127,7 +136,8 @@ Rectangle {
                             onPressed: mouse => {
                                 imageFocus.forceActiveFocus();
                                 initialX = mouse.x; initialY = mouse.y;
-                                focusX = backend.settings.fit_x; focusY = backend.settings.fit_y;
+                                focusX = (frame.width / 2 - picture.x) / picture.width;
+                                focusY = (frame.height / 2 - picture.y) / picture.height;
                             }
                             onPositionChanged: mouse => {
                                 if (pressed) root.focusPosition(focusX - (mouse.x - initialX) / picture.width, focusY - (mouse.y - initialY) / picture.height);
@@ -140,15 +150,15 @@ Rectangle {
                         Item {
                             id: imageFocus
                             anchors.fill: parent
-                            activeFocusOnTab: root.fitted && !backend.busy
-                            enabled: root.fitted && !backend.busy
+                            activeFocusOnTab: root.movable && !backend.busy
+                            enabled: root.movable && !backend.busy
                             Accessible.role: Accessible.Graphic
                             Accessible.name: "Położenie kadru"
                             Accessible.description: "Przesuwaj strzałkami. Przybliżenie zmienisz suwakiem w lewym panelu."
-                            Keys.onLeftPressed: event => { root.focusPosition(backend.settings.fit_x + .01, backend.settings.fit_y); event.accepted = true; }
-                            Keys.onRightPressed: event => { root.focusPosition(backend.settings.fit_x - .01, backend.settings.fit_y); event.accepted = true; }
-                            Keys.onUpPressed: event => { root.focusPosition(backend.settings.fit_x, backend.settings.fit_y + .01); event.accepted = true; }
-                            Keys.onDownPressed: event => { root.focusPosition(backend.settings.fit_x, backend.settings.fit_y - .01); event.accepted = true; }
+                            Keys.onLeftPressed: event => { root.nudgeFocus(.01, 0); event.accepted = true; }
+                            Keys.onRightPressed: event => { root.nudgeFocus(-.01, 0); event.accepted = true; }
+                            Keys.onUpPressed: event => { root.nudgeFocus(0, .01); event.accepted = true; }
+                            Keys.onDownPressed: event => { root.nudgeFocus(0, -.01); event.accepted = true; }
                             Rectangle { anchors.fill: parent; color: "transparent"; border.color: Theme.focus; border.width: 2; visible: imageFocus.activeFocus }
                         }
                         Row {
@@ -219,16 +229,19 @@ Rectangle {
                         }
                     }
                     Rectangle { anchors.horizontalCenter: parent.horizontalCenter; y: 7; width: parent.width * .30; height: phone.width * .077; radius: height / 2; color: "#050506"; Rectangle { width: parent.height * .4; height: width; radius: width / 2; x: parent.width - width - 5; anchors.verticalCenter: parent.verticalCenter; color: "#111b2c" } }
+                    Rectangle { anchors.horizontalCenter: parent.horizontalCenter; anchors.bottom: parent.bottom; anchors.bottomMargin: 5; width: parent.width * .34; height: 2; radius: 1; color: "#d2d2d2"; opacity: .8 }
                 }
+                Rectangle { id: screenMask; objectName: "settingsPreviewScreenMask"; anchors.fill: screen; radius: screen.radius; color: "white"; layer.enabled: true; visible: false }
             }
         }
         RowLayout {
             Layout.fillWidth: true
-            Label { text: root.vertical ? "9:16" : "Oryginalny · 16:9"; color: Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold }
+            Label { text: root.phoneFormat ? "9:19,5" : root.vertical ? "9:16" : "16:9"; color: Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold }
             Item { Layout.fillWidth: true }
+            PrimaryButton { objectName: "previewFillScreenButton"; implicitHeight: 32; font.pixelSize: 11; text: "Wypełnij ekran"; enabled: !backend.busy && !(root.phoneFormat && backend.settings.framing === "Wypełnij · środek"); Accessible.description: "Eksport 1080 na 2340 pikseli. Przytnie obraz, aby wypełnić ekran telefonu w podglądzie."; onClicked: backend.fillPhoneScreen() }
             Label { objectName: "previewTempoLabel"; text: root.tempo === 1 ? "1×" : "1,1×"; color: Theme.text; font.pixelSize: 13 }
         }
-        Label { Layout.fillWidth: true; text: root.fitted ? "Przeciągnij obraz lub napisy.\nKółko myszy: przybliżenie." : "Przeciągnij napisy na kadrze.\nStrzałki: precyzyjne przesuwanie."; color: Theme.muted; font.pixelSize: 11; wrapMode: Text.WordWrap }
+        Label { Layout.fillWidth: true; text: root.movable ? "Przeciągnij obraz lub napisy.\nKółko myszy: przybliżenie." : "Przeciągnij napisy na kadrze.\nStrzałki: precyzyjne przesuwanie."; color: Theme.muted; font.pixelSize: 11; wrapMode: Text.WordWrap }
         RowLayout {
             Layout.fillWidth: true
             PrimaryButton { objectName: "previewPlaybackButton"; Layout.fillWidth: true; implicitHeight: 34; font.pixelSize: 11; text: root.playing ? "Wstrzymaj" : "Odtwórz"; enabled: backend.settings.burn && Theme.motion; onClicked: root.playing = !root.playing }

@@ -1,4 +1,4 @@
-"""Local 9:16 layouts and YuNet face-following crop paths."""
+"""Local portrait layouts and YuNet face-following crop paths."""
 from pathlib import Path
 import math
 
@@ -16,9 +16,18 @@ FIT_FILTER = 'scale=1080:1920:force_original_aspect_ratio=decrease:force_divisib
 CENTER_FILTER = 'scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1'
 
 
-def face_track(source, start, end, check, log):
+def fit_filter(canvas_size=(1080, 1920)):
+    from video_layout import canvas_dimensions
+    width, height = canvas_dimensions(canvas_size)
+    return (f'scale={width}:{height}:force_original_aspect_ratio=decrease:force_divisible_by=2,'
+            f'pad={width}:{height}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1')
+
+
+def face_track(source, start, end, check, log, canvas_size=(1080, 1920)):
     import av
     import cv2
+    from video_layout import canvas_dimensions
+    canvas_w, canvas_h = canvas_dimensions(canvas_size)
     model = Path(__file__).with_name('assets') / 'face' / 'yunet.onnx'
     if not model.exists():
         raise ValueError('Brak lokalnego modelu twarzy w assets/face/yunet.onnx.')
@@ -30,8 +39,8 @@ def face_track(source, start, end, check, log):
     with av.open(str(source)) as container:
         stream = container.streams.video[0]
         width, height = stream.width, stream.height
-        crop_w = max(2, int(min(width, height * 9 / 16)) // 2 * 2)
-        crop_h = max(2, int(min(height, width * 16 / 9)) // 2 * 2)
+        crop_w = max(2, int(min(width, height * canvas_w / canvas_h)) // 2 * 2)
+        crop_h = max(2, int(min(height, width * canvas_h / canvas_w)) // 2 * 2)
         container.seek(int(start * av.time_base), backward=True)
         for frame in container.decode(stream):
             check()
@@ -116,10 +125,12 @@ def _curve_expression(start, duration, coefficients):
             f'{a:.9f}+ld(0)*({b:.9f}+ld(0)*({c:.9f}+ld(0)*{d:.9f}))')
 
 
-def face_filter(source, start, end, command_file, check, log):
-    track = face_track(source, start, end, check, log)
+def face_filter(source, start, end, command_file, check, log, canvas_size=(1080, 1920)):
+    from video_layout import canvas_dimensions
+    canvas_w, canvas_h = canvas_dimensions(canvas_size)
+    track = face_track(source, start, end, check, log, canvas_size)
     if track is None:
-        return FIT_FILTER
+        return fit_filter(canvas_size)
     width, height, points = track
     # Coalesce the duplicate zero-time anchor and any rounded decoder times.
     unique = {}
@@ -137,4 +148,4 @@ def face_filter(source, start, end, command_file, check, log):
     Path(command_file).write_text('\n'.join(commands), encoding='utf-8')
     return (f"setpts=PTS-STARTPTS,sendcmd=f='{Path(command_file).name}',"
             f'crop@follow={width}:{height}:{int(points[0][1])}:{int(points[0][2])}:exact=1,'
-            'scale=1080:1920,setsar=1')
+            f'scale={canvas_w}:{canvas_h},setsar=1')

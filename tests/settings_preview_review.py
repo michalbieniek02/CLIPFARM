@@ -40,6 +40,8 @@ def click(name, fraction=.5):
     QTest.mouseClick(window, Qt.LeftButton, Qt.NoModifier, point.toPoint())
     settle()
 def capture(name):
+    if os.environ.get('CLIPFARM_SKIP_REVIEW_CAPTURES') == '1':
+        return
     settle()
     assert window.grabWindow().save(str(review / name))
 try:
@@ -152,12 +154,18 @@ try:
     assert item('captionYField').property('text') == str(round(backend.previewLayout['caption_y'] / backend.previewLayout['canvas_height'] * 100))
     backend.setSetting('caption_font', 'Anton')
     backend.setSetting('caption_size', 84)
-    click('settingsFormatTabs', .75)
+    click('settingsFormatChoice')
+    QTest.keyClick(window, Qt.Key_End)
+    QTest.keyClick(window, Qt.Key_Return)
+    settle()
     assert backend.settings['format'] == 'Oryginalny'
     assert abs(frame.width() / frame.height() - 16 / 9) < .01
     assert abs(captions.property('fittedSize') - backend.captionSize * frame.width() / 1080) < 1
     capture('settings-preview-original-minimum.png')
-    click('settingsFormatTabs', .25)
+    click('settingsFormatChoice')
+    QTest.keyClick(window, Qt.Key_Home)
+    QTest.keyClick(window, Qt.Key_Return)
+    settle()
     # Use the real combo popup through keyboard selection.
     choice = item('settingsFramingChoice')
     click('settingsFramingChoice')

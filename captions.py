@@ -73,19 +73,22 @@ def progressive_cues(cues):
     return result
 
 
-def placement(width, height, vertical, fitted):
+def placement(width, height, vertical, fitted, canvas_size=(1080, 1920)):
     """Return canvas, caption centre and optional fit filter reserving a black strip."""
     if not vertical:
         return width // 2 * 2, height // 2 * 2, height * .84, None
+    from video_layout import canvas_dimensions
+    canvas_w, canvas_h = canvas_dimensions(canvas_size)
     if fitted:
-        displayed_height = min(1920, height * 1080 / width)
-        bottom = (1920 - displayed_height) / 2
-        if bottom >= 180:
-            return 1080, 1920, 1920 - bottom + min(140, bottom / 2), None
-        return 1080, 1920, 1790, (
-            'scale=1080:1656:force_original_aspect_ratio=decrease:force_divisible_by=2,'
-            'pad=1080:1920:(ow-iw)/2:(1656-ih)/2:color=black,setsar=1')
-    return 1080, 1920, 1620, None
+        displayed_height = min(canvas_h, height * canvas_w / width)
+        bottom = (canvas_h - displayed_height) / 2
+        if bottom >= canvas_h * 180 / 1920:
+            return canvas_w, canvas_h, canvas_h - bottom + min(canvas_h * 140 / 1920, bottom / 2), None
+        available_h = int(canvas_h * .8625) // 2 * 2
+        return canvas_w, canvas_h, canvas_h * 1790 / 1920, (
+            f'scale={canvas_w}:{available_h}:force_original_aspect_ratio=decrease:force_divisible_by=2,'
+            f'pad={canvas_w}:{canvas_h}:(ow-iw)/2:({available_h}-ih)/2:color=black,setsar=1')
+    return canvas_w, canvas_h, canvas_h * .84375, None
 
 
 def ass_text(cues, width, height, y, x=None, font='Anton', font_size=FONT_SIZE):

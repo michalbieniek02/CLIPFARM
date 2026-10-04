@@ -30,12 +30,12 @@ Rectangle {
                     Label { text: "s"; color: Theme.muted }
                 }
                 Label { text: "FORMAT I KADROWANIE"; color: Theme.muted; font.pixelSize: 10; font.letterSpacing: 1; Layout.topMargin: 8 }
-                SegmentTabs { objectName: "settingsFormatTabs"; Layout.fillWidth: true; options: ["Pionowy 9:16", "Oryginalny"]; value: backend.settings.format; onChosen: value => backend.setSetting("format", value) }
-                Choice { objectName: "settingsFramingChoice"; Layout.fillWidth: true; model: backend.framingLabels; currentIndex: backend.framingLabels.indexOf(backend.settings.framing); enabled: backend.settings.format === "Pionowy 9:16"; Accessible.name: "Kadrowanie"; onActivated: backend.setSetting("framing", currentText) }
+                Choice { objectName: "settingsFormatChoice"; Layout.fillWidth: true; model: backend.formatChoices; currentIndex: backend.formatChoices.indexOf(backend.settings.format); Accessible.name: "Format eksportu"; onActivated: backend.setSetting("format", currentText) }
+                Choice { objectName: "settingsFramingChoice"; Layout.fillWidth: true; model: backend.framingLabels; currentIndex: backend.framingLabels.indexOf(backend.settings.framing); enabled: backend.settings.format !== "Oryginalny"; Accessible.name: "Kadrowanie"; onActivated: backend.setSetting("framing", currentText) }
                 Label { Layout.fillWidth: true; text: backend.framingHelp; color: Theme.muted; font.pixelSize: 11; wrapMode: Text.WordWrap }
                 ColumnLayout {
                     Layout.fillWidth: true
-                    visible: backend.settings.format === "Pionowy 9:16" && backend.settings.framing === "Cały obraz · czarne pasy"
+                    visible: backend.settings.format !== "Oryginalny" && backend.settings.framing !== "Podążaj za twarzą"
                     spacing: 6
                     RowLayout {
                         Layout.fillWidth: true
@@ -48,10 +48,10 @@ Rectangle {
                         Layout.fillWidth: true
                         from: 1; to: 4; stepSize: .1
                         value: backend.settings.fit_zoom
-                        Accessible.name: "Przybliżenie kadru w czarnych pasach"
+                        Accessible.name: "Przybliżenie kadru"
                         onMoved: backend.setSetting("fit_zoom", value)
                     }
-                    Label { Layout.fillWidth: true; text: "Przesuń obraz w telefonie, aby wybrać miejsce. Poza obrazem zostają czarne pasy."; color: Theme.muted; font.pixelSize: 11; wrapMode: Text.WordWrap }
+                    Label { Layout.fillWidth: true; text: backend.settings.framing === "Cały obraz · czarne pasy" ? "Przesuń obraz w telefonie, aby wybrać miejsce. Poza obrazem zostają czarne pasy." : "Przesuń obraz w telefonie, aby wybrać kadr. Wypełnienie przycina obraz bez rozciągania."; color: Theme.muted; font.pixelSize: 11; wrapMode: Text.WordWrap }
                 }
                 Label { text: "DODATKI EKSPORTU"; color: Theme.muted; font.pixelSize: 10; font.letterSpacing: 1; Layout.topMargin: 8 }
                 ColumnLayout {

@@ -16,7 +16,8 @@ from PySide6.QtWidgets import QFileDialog
 from engine import Cancelled, Pipeline, ROOT, minute_clips, subtitle_text, validate_clips, validate_options
 from captions import FONT_SIZE
 from font_catalog import FONT_NAMES, resolve_font
-from video_layout import SETTING_RANGES, number, frame_layout
+from video_layout import (SETTING_RANGES, number, frame_layout, FORMAT_CHOICES,
+                          FORMAT_VERTICAL, FORMAT_PHONE, FORMAT_ORIGINAL, canvas_for_format)
 from framing import FRAMING_LABELS, FRAMING_HELP
 from transcripts import existing_transcript, read_transcript, remember_transcript, validate_segments
 from ui_media import thumbnail
@@ -176,7 +177,8 @@ class Backend(QObject):
     previewUrl = Property(str, lambda self: self._preview, notify=previewChanged)
     animationsEnabled = Property(bool, lambda self: self._animations, notify=animationsChanged)
     framingLabels = Property('QStringList', lambda self: list(FRAMING_LABELS), constant=True)
-    framingHelp = Property(str, lambda self: FRAMING_HELP.get(FRAMING_LABELS.get(self._settings['framing']), '') if self._settings['format'] == 'Pionowy 9:16' else 'Zachowamy oryginalne proporcje całego filmu.', notify=settingsChanged)
+    formatChoices = Property('QStringList', lambda self: list(FORMAT_CHOICES), constant=True)
+    framingHelp = Property(str, lambda self: self.framing_help(), notify=settingsChanged)
     downloadProviders = Property('QStringList', lambda self: list(PROVIDERS), constant=True)
     downloadQualities = Property('QStringList', lambda self: list(QUALITIES), constant=True)
     captionSize = Property(float, lambda self: self._settings['caption_size'], notify=settingsChanged)
@@ -184,11 +186,32 @@ class Backend(QObject):
     fontChoices = Property('QStringList', lambda self: list(FONT_NAMES), constant=True)
     captionRows = Property('QVariantList', lambda self: [
         {'start': row['start'], 'end': row['end'], 'text': row['text']} for row in self.segments], notify=stateChanged)
-    previewLayout = Property('QVariantMap', lambda self: frame_layout(
-        1672, 941, self._settings['format'] == 'Pionowy 9:16', self._settings['framing'] == 'Cały obraz · czarne pasy',
-        self._settings['fit_zoom'], self._settings['fit_x'], self._settings['fit_y'],
-        (self._settings['caption_x'], self._settings['caption_y']) if self._settings['caption_custom'] else None,
-        self._settings['burn']), notify=settingsChanged)
+    previewLayout = Property('QVariantMap', lambda self: self.preview_layout(), notify=settingsChanged)
+
+    def framing_help(self):
+        if self._settings['format'] == FORMAT_ORIGINAL:
+            return 'Zachowamy oryginalne proporcje całego filmu.'
+        help_text = FRAMING_HELP.get(FRAMING_LABELS.get(self._settings['framing']), '')
+        if self._settings['format'] == FORMAT_PHONE:
+            return '1080 × 2340 · proporcje telefonu w podglądzie. ' + help_text
+        return help_text
+
+    def preview_layout(self):
+        s = self._settings
+        manual = FRAMING_LABELS[s['framing']] in ('fit', 'center')
+        return frame_layout(
+            1672, 941, s['format'] != FORMAT_ORIGINAL, FRAMING_LABELS[s['framing']] == 'fit',
+            s['fit_zoom'] if manual else 1, s['fit_x'] if manual else .5, s['fit_y'] if manual else .5,
+            (s['caption_x'], s['caption_y']) if s['caption_custom'] else None,
+            s['burn'], canvas_size=canvas_for_format(s['format']))
+
+    @Slot()
+    def fillPhoneScreen(self):
+        if self.busy:
+            return
+        self._settings = {**self._settings, 'format': FORMAT_PHONE, 'framing': 'Wypełnij · środek',
+                          'fit_zoom': 1.0, 'fit_x': .5, 'fit_y': .5}
+        self.settingsChanged.emit()
 
     @Slot(str, 'QVariant')
     def setSetting(self, name, value):
@@ -201,6 +224,8 @@ class Backend(QObject):
                 return
         elif name == 'caption_font':
             value = resolve_font(value)
+        elif name == 'format' and value not in FORMAT_CHOICES:
+            return
         elif isinstance(self._settings[name], bool):
             value = bool(value)
         elif not isinstance(value, str):
@@ -208,6 +233,9 @@ class Backend(QObject):
         if value == self._settings[name]:
             return
         self._settings = {**self._settings, name: value}
+        if name == 'format' and value == FORMAT_PHONE:
+            self._settings = {**self._settings, 'framing': 'Wypełnij · środek',
+                              'fit_zoom': 1.0, 'fit_x': .5, 'fit_y': .5}
         self.settingsChanged.emit()
 
     @Slot(int, str, result=bool)
@@ -566,12 +594,13 @@ class Backend(QObject):
     def render(self, clips, folder, preview):
         source, work, rows, s = self.source, self.work, copy.deepcopy(self.segments), copy.deepcopy(self._settings)
         def operation(p):
-            files = p.export(source, clips, rows, folder, vertical=s['format'] == 'Pionowy 9:16', burn=s['burn'],
+            files = p.export(source, clips, rows, folder, vertical=s['format'] != FORMAT_ORIGINAL, burn=s['burn'],
                              framing=FRAMING_LABELS[s['framing']], timing_work=work,
                              light_color=s['light_color'], speed_up=s['speed_up'], mirror=s['mirror'],
                              caption_font=s['caption_font'], caption_size=s['caption_size'],
                              caption_position=(s['caption_x'], s['caption_y']) if s['caption_custom'] else None,
-                             fit_zoom=s['fit_zoom'], fit_focus=(s['fit_x'], s['fit_y']))
+                             fit_zoom=s['fit_zoom'], fit_focus=(s['fit_x'], s['fit_y']),
+                             canvas_size=canvas_for_format(s['format']))
             return files, p.caption_segments
         def complete(result):
             files, self.segments = result
@@ -670,8 +699,8 @@ class Backend(QObject):
                 elif key in defaults and isinstance(value, type(defaults[key])):
                     defaults[key] = value
             defaults['caption_font'] = resolve_font(defaults['caption_font'])
-            if defaults['format'] not in ('Pionowy 9:16', 'Oryginalny'):
-                defaults['format'] = 'Pionowy 9:16'
+            if defaults['format'] not in FORMAT_CHOICES:
+                defaults['format'] = FORMAT_VERTICAL
             if defaults['framing'] not in FRAMING_LABELS:
                 defaults['framing'] = 'Cały obraz · czarne pasy'
             if defaults['whisper'] not in ('Szybka', 'Zrównoważona', 'Dokładna', 'Najdokładniejsza'):
