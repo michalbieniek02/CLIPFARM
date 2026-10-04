@@ -17,12 +17,13 @@ function Test-ClipfarmPython {
         # Single Python quotes survive Windows PowerShell 5.1 native arguments.
         $probe = 'import json,platform,struct,sys; print(json.dumps(dict(executable=sys.executable,major=sys.version_info.major,minor=sys.version_info.minor,bits=struct.calcsize(''P'')*8,machine=platform.machine(),prefix=sys.prefix,venv=sys.prefix!=sys.base_prefix),ensure_ascii=True))'
         $output = & $Path @LauncherArguments -c $probe 2>$null
-        if ($LASTEXITCODE -ne 0) { return $null }
+        if ($LASTEXITCODE -ne 0) { Write-Verbose "Python probe failed: $Path (status $LASTEXITCODE)"; return $null }
+        Write-Verbose "Python probe: $($output -join ' ')"
         $python = ($output -join "`n") | ConvertFrom-Json
         if ($python.major -ne 3 -or $python.minor -lt 11 -or $python.bits -ne 64 -or $python.machine -notin @('AMD64', 'x86_64')) { return $null }
         if (-not (Test-Path -LiteralPath $python.executable -PathType Leaf)) { return $null }
         return $python
-    } catch { return $null }
+    } catch { Write-Verbose "Python probe failed: $Path - $($_.Exception.Message)"; return $null }
 }
 
 function Find-ClipfarmPython {
@@ -111,7 +112,7 @@ try {
             if (-not $clipfarmBasePython) { throw 'Podany -PythonPath nie wskazuje na dzialajacy Python 3.11+ x64.' }
         } else { $clipfarmBasePython = Find-ClipfarmPython }
         if (-not $clipfarmBasePython) {
-            $winget = Get-Command winget.exe -CommandType Application -ErrorAction SilentlyContinue
+            $winget = Get-Command winget.exe -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
             if (-not $winget) { throw 'Zainstaluj Python 3.12 (Windows installer, 64-bit) z https://www.python.org/downloads/windows/ i uruchom instalator ponownie.' }
             Write-Host 'Instaluje Python 3.12 x64 dla biezacego uzytkownika przez winget...'
             & $winget.Source install --id Python.Python.3.12 --exact --source winget --scope user --architecture x64 --silent --accept-package-agreements --accept-source-agreements --disable-interactivity

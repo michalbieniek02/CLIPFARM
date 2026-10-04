@@ -39,9 +39,9 @@ try {
     # Empty requirements keep this check offline and do not install application dependencies.
     $nativePython = Join-Path $clipfarmRepo 'runtime\Scripts\python.exe'
     if (-not (Test-Path -LiteralPath $nativePython)) {
-        $nativePython = (Get-Command python.exe -CommandType Application -ErrorAction Stop).Source
+        $nativePython = (Get-Command python.exe -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
     }
-    [void](Invoke-TestInstaller @('-DesktopPath', $clipfarmDesktop, '-PythonPath', $nativePython))
+    [void](Invoke-TestInstaller @('-DesktopPath', $clipfarmDesktop, '-PythonPath', $nativePython, '-Verbose'))
     $nativeRuntime = [IO.Path]::GetFullPath((Join-Path $clipfarmFixture 'runtime'))
     Assert-Installer (Test-Path -LiteralPath (Join-Path $nativeRuntime 'pyvenv.cfg')) 'Real Python did not create a venv.'
     Assert-Installer (Test-Path -LiteralPath (Join-Path $clipfarmDesktop 'CLIPFARM.lnk')) 'Real installation did not create a shortcut.'
