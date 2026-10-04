@@ -5,52 +5,146 @@
 Lokalna aplikacja desktopowa Windows do tworzenia klipów z filmów z mową.
 Interfejs: PySide6 / QML (Qt Quick), ciemne studio z wbudowanym podglądem wideo.
 
-## Uruchomienie na tym komputerze
+## Instalacja na Windows
 
-Kliknij dwukrotnie **CLIPFARM.exe**. Launcher otwiera aplikację bez konsoli.
-Alternatywy: **CLIPFARM.vbs** albo `powershell -ExecutionPolicy Bypass -File Start-CLIPFARM.ps1`.
-Folder `runtime` musi pozostać obok launchera. To instalacja lokalna, a nie przenośny pojedynczy EXE.
+Każdy użytkownik instaluje aplikację u siebie i loguje **własne konto** w Codex CLI
+albo Claude Code. CLIPFARM nie zawiera konta autora ani wspólnych kluczy API.
+Wybierz jeden z wariantów logowania poniżej; instalator aplikacji nie loguje Cię do AI.
 
-## Instalacja ze świeżego repozytorium
+1. Pobierz **clipfarm-windows.zip** z [najnowszego wydania](https://github.com/michalbieniek02/CLIPFARM/releases/latest).
+2. Rozpakuj **cały ZIP** do stałego folderu, np. `D:\CLIPFARM`. Nie uruchamiaj instalatora wewnątrz ZIP-a.
+3. Kliknij dwukrotnie **Install-CLIPFARM.exe** w rozpakowanym folderze.
+   Instalator szuka Pythona 3.11+ 64-bit (preferuje 3.12), a przy jego braku próbuje
+   zainstalować Python 3.12 przez WinGet. Następnie przygotowuje `runtime`, pobiera
+   zależności i tworzy **skrót CLIPFARM na Twoim pulpicie z ikoną aplikacji**.
+4. Skonfiguruj Codex CLI albo Claude Code według wariantu A lub B, po czym otwórz
+   CLIPFARM ze skrótu na pulpicie.
 
-Na Windows zainstaluj **Python 3.11+ 64-bit** oraz **Codex CLI albo Claude Code**.
-Zalecana i przetestowana wersja to **Python 3.12**; dostępność bibliotek Whisper/CUDA
-na nowszych wydaniach Pythona zależy od przypiętych zależności. Sklonuj repozytorium i otwórz PowerShell
-w jego folderze, na przykład:
+Instalacja wymaga internetu i może potrwać przy pobieraniu bibliotek. Jeśli WinGet
+jest niedostępny, zainstaluj [Python 3.12 dla Windows, 64-bit](https://www.python.org/downloads/windows/)
+i uruchom instalator ponownie. Python 3.12 jest przetestowany z zależnościami aplikacji;
+dostępność Whisper/CUDA na nowszych wersjach zależy od tych bibliotek.
+
+Folder aplikacji musi pozostać na miejscu: skrót wskazuje na jego `CLIPFARM.exe`.
+Nie przenoś samego EXE — potrzebuje `qml`, `assets`, plików Pythona i `runtime`.
+Modele Whisper pobierają się do `models` przy pierwszym użyciu. Ponowne uruchomienie
+instalatora nie usuwa projektów, eksportów ani danych logowania AI.
+
+Z repozytorium można zainstalować tę samą aplikację w PowerShellu
+(wymaga [Git for Windows](https://git-scm.com/download/win)):
 
 ```powershell
-git clone <adres-repozytorium> CLIPFARM
+git clone https://github.com/michalbieniek02/CLIPFARM.git
 cd CLIPFARM
-powershell -ExecutionPolicy Bypass -File .\Install-CLIPFARM.ps1
-codex login                 # jeśli używasz Codex CLI
-# albo:
-npm install -g @anthropic-ai/claude-code
-claude                       # dokończ logowanie w terminalu
+.\Install-CLIPFARM.exe
 ```
 
-Instalator tworzy lokalne środowisko `runtime` i pobiera biblioteki. Potem uruchom:
+Alternatywa dla EXE: `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Install-CLIPFARM.ps1`.
+Po instalacji działają też `CLIPFARM.exe`, `CLIPFARM.vbs` i `Start-CLIPFARM.ps1`.
+
+### Wariant A: Codex CLI i własny plan ChatGPT
+
+Potrzebujesz własnego planu ChatGPT z dostępem do Codexa oraz **Codex CLI zainstalowanego
+w Windows**. Samo logowanie w przeglądarce lub aplikacji desktopowej nie zastępuje
+sprawdzenia sesji CLI. Logowanie przez ChatGPT korzysta z uprawnień planu; logowanie
+kluczem API jest rozliczane osobno. [OpenAI Docs: uwierzytelnianie](https://learn.chatgpt.com/docs/auth).
+
+Zainstaluj [Node.js LTS dla Windows](https://nodejs.org/en/download), otwórz nowy PowerShell i wykonaj:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\Start-CLIPFARM.ps1
+npm.cmd install -g @openai/codex@latest
+codex.cmd --version
+codex.cmd login
+codex.cmd login status
 ```
 
-Przy kolejnych uruchomieniach wystarczy dwuklik `CLIPFARM.exe` albo `CLIPFARM.vbs`.
-Nie przenoś samego pliku EXE — musi mieć obok cały folder aplikacji, w tym `qml`,
-pliki Pythona, `assets` i `runtime`. Modele pobierają się do `models` przy pierwszym użyciu.
-Jeśli PowerShell zgłosi brak Pythona, zainstaluj Python 3.12 z opcją „Add python.exe to PATH”,
-zamknij i otwórz PowerShell ponownie, a następnie uruchom instalator jeszcze raz.
+W przeglądarce wybierz własne konto ChatGPT z aktywnym planem. Status powinien wskazywać
+logowanie przez ChatGPT. Jeśli wskazuje API, wykonaj `codex.cmd logout`, a następnie
+`codex.cmd login` i ponownie sprawdź status. Nie wybieraj logowania kluczem API.
+Końcówka `.cmd` pozwala użyć instalacji npm w PowerShellu bez zmiany globalnej polityki skryptów.
+Źródła: [Codex CLI](https://learn.chatgpt.com/docs/codex/cli),
+[instalacja npm](https://developers.openai.com/cookbook/examples/codex/using_goals_in_codex).
 
-CLIPFARM wykrywa dostawcę automatycznie: najpierw sprawdza Codex CLI, a jeśli nie może
-z niego skorzystać, przechodzi do Claude Code. Na komputerze z oboma narzędziami Codex
-ma pierwszeństwo. Użytkownik Claude nie musi instalować Codexa — wystarczy `claude`,
-jednorazowe logowanie w terminalu i później zwykły start aplikacji.
+CLIPFARM używa obecnie modelu `gpt-6.1-sol` i jego dostępność zależy od konta.
+Ustawienie innego modelu w konfiguracji Codexa nie zmienia modelu aplikacji.
+Wybór fragmentów zużywa limity Twojego konta Codex; lokalne pobieranie, transkrypcja
+Whisper i eksport filmu nie wymagają wywołań tego modelu.
+
+### Wariant B: Claude Code i własny plan Claude Pro lub Max
+
+Codex nie jest wymagany. Zainstaluj natywne Claude Code dla Windows w PowerShellu:
+
+```powershell
+winget install --id Anthropic.ClaudeCode --exact
+```
+
+Zamknij i otwórz PowerShell, aby wczytał nowy PATH, a następnie:
+
+```powershell
+claude --version
+claude auth login
+claude auth status --text
+```
+
+Zaloguj własne konto **Claude Pro lub Max przez claude.ai**. Wybierz subskrypcję,
+a nie Claude Console / API. Przy starszym CLI uruchom `claude` i użyj `/login`,
+a `/status` sprawdza aktywną sesję. CLIPFARM uruchamia lokalne Claude Code i używa
+jego domyślnego modelu. [Instalacja Claude Code](https://code.claude.com/docs/en/quickstart),
+[polecenia logowania](https://code.claude.com/docs/en/cli-reference).
+
+Limity są współdzielone z Claude i Claude Code. Po ich wykorzystaniu poczekaj na reset;
+nie włączaj dodatkowych płatnych kredytów, jeśli chcesz pozostać w ramach abonamentu.
+[Claude Code w planie Pro/Max](https://support.claude.com/en/articles/11145838-use-claude-code-with-your-pro-or-max-plan).
+
+### Sprawdzenie, z którego konta korzysta aplikacja
+
+Oba narzędzia muszą działać w **tym samym koncie Windows**, z którego uruchamiasz CLIPFARM.
+Instalacja wyłącznie w WSL nie wystarczy. Po instalacji CLI lub zmianie PATH zamknij
+i otwórz terminal oraz CLIPFARM. Logowania zostają w profilach CLI; aplikacja ich nie kopiuje.
+
+CLIPFARM najpierw próbuje Codex CLI. Przy jego niedostępności lub błędzie próbuje
+Claude Code, jeśli jest zainstalowane. Przy obu narzędziach nie ma obecnie przełącznika
+dostawcy; Codex ma pierwszeństwo. Wybrane narzędzie widać w dzienniku „Szczegóły”.
+
+Zmienne z kluczami API lub ustawienia alternatywnych dostawców mogą nadpisać subskrypcję.
+Claude Code nadaje `ANTHROPIC_API_KEY` pierwszeństwo przed sesją abonamentową.
+[Zasady wyboru uwierzytelniania](https://support.claude.com/en/articles/12304248-manage-api-key-environment-variables-in-claude-code).
+CLIPFARM nie wymusza rodzaju rozliczenia, więc sprawdź status CLI przed pierwszą analizą.
+Jeśli masz klucze ustawione do innych projektów, możesz usunąć je **tylko z bieżącego
+terminala** i uruchomić aplikację z tego samego terminala:
+
+```powershell
+Remove-Item Env:OPENAI_API_KEY -ErrorAction SilentlyContinue
+Remove-Item Env:CODEX_API_KEY -ErrorAction SilentlyContinue
+Remove-Item Env:ANTHROPIC_API_KEY -ErrorAction SilentlyContinue
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Start-CLIPFARM.ps1
+```
+
+Nie publikuj tokenów, plików logowania ani własnych kluczy w repozytorium.
+
+### Instalacja z pomocą Codexa lub Claude Code
+
+W swoim zalogowanym agencie możesz wkleić poniższe polecenie. Logowanie w przeglądarce
+dokończ osobiście; agent nie potrzebuje Twojego hasła ani tokenu.
+
+```text
+Zainstaluj https://github.com/michalbieniek02/CLIPFARM na Windows.
+Przeczytaj README, pobierz aplikację do stałego folderu i uruchom Install-CLIPFARM.exe.
+Utwórz skrót CLIPFARM na moim pulpicie z ikoną aplikacji.
+Do AI używaj lokalnego Codex CLI albo Claude Code zalogowanego na moje własne konto
+z subskrypcją; sprawdź wersję i status logowania bez uruchamiania płatnego zapytania.
+Nie konfiguruj API ani dodatkowych płatnych kredytów, nie kopiuj danych logowania.
+Jeśli potrzebne jest logowanie w przeglądarce, zostaw je do wykonania przeze mnie.
+```
+
+## Pierwszy film
 
 1. Przeciągnij film z Eksploratora Windows na okno albo kliknij „Wybierz film”.
 2. Domyślne ustawienia: automatyczna liczba propozycji zależna od długości filmu,
    długość 20–30 s (clip może mieć 15–40 s), pionowy obraz 9:16,
    cały film z czarnymi pasami i napisy w obrazie.
 3. Kliknij „Znajdź fragmenty”. Whisper robi transkrypcję lokalnie, jeśli nie ma gotowej;
-   Codex CLI wysyła tekst do GPT 6.1 Sol i zwraca tytuły, czasy i uzasadnienia.
+   Codex CLI albo Claude Code analizuje tekst i zwraca tytuły, czasy i uzasadnienia.
 4. Kliknij „Edytuj”, popraw czasy w sekundach i zatwierdź przyciskiem „Zapisz”.
    „Podgląd” renderuje fragment z bieżącymi ustawieniami i otwiera go we wbudowanym odtwarzaczu.
    Niepotrzebne propozycje możesz usunąć przyciskiem „Usuń”.
@@ -173,7 +267,9 @@ Pierwsze użycie innego modelu Whisper może pobrać go z Hugging Face.
 Aplikacja automatycznie wykrywa zalogowane narzędzie AI. Jeśli istnieje Codex CLI,
 używa jego konta i GPT 6.1 Sol. Jeśli Codex nie jest dostępny, a istnieje Claude Code,
 używa jego aktywnej sesji i domyślnego modelu Claude. Nie ma przełącznika dostawcy
-ani klucza API. Przy problemie z logowaniem uruchom `codex login` albo `claude`.
+ani pola klucza API. Rozliczenie zależy od aktywnej sesji CLI i zmiennych środowiska;
+konfigurację własnego abonamentu opisują warianty instalacji powyżej.
+Przy problemie z logowaniem uruchom `codex.cmd login` albo `claude auth login`.
 Tokeny logowania zostają w ich własnych aplikacjach; CLIPFARM ich nie kopiuje.
 
 Film oraz dźwięk pozostają na komputerze. Do modelu trafia transkrypcja i opis wyboru.
@@ -215,7 +311,7 @@ użytkownika nadal ma pierwszeństwo. Licencja i autor: THIRD_PARTY_NOTICES.md.
 
 ## Ponowna instalacja / rozwój
 
-Python 3.12 zalecany. Uruchom `Install-CLIPFARM.ps1`, a następnie zaloguj Codex CLI.
+Python 3.12 zalecany. Uruchom `Install-CLIPFARM.exe`, a następnie zaloguj Codex CLI albo Claude Code.
 Zależności są przypięte w `requirements.txt`, w tym PyAV 16.1 zgodne z faster-whisper 1.2.1.
 Kod: `app.py` (obsługa okna), `ui_layout.py` (interfejs), `ui_media.py` (lokalne miniatury),
 `engine.py` (pipeline), `framing.py` (kadrowanie), `transcripts.py` (napisy i pamięć), `Launcher.cs` (launcher).

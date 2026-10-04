@@ -30,6 +30,14 @@ jobs:
         with:
           python-version: '3.12'
           cache: pip
+      - name: Build desktop installer
+        shell: pwsh
+        run: |
+          $clipfarmCompiler = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
+          & $clipfarmCompiler /nologo /target:exe /win32icon:assets/clipfarm.ico /out:Install-CLIPFARM.exe Installer.cs
+          if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed' }
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests/installer_review.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'Installer review failed' }
       - name: Install CPU test dependencies
         shell: pwsh
         run: |
